@@ -25,6 +25,7 @@ import {
   updateGrowthArticle,
   type ArticleInput,
 } from '../../api/growth/articles';
+import { getMembershipPlans } from '../../api/growth/membership';
 import {
   ACCESS_LABELS,
   STATUS_LABELS,
@@ -83,6 +84,10 @@ const stackStyle = {
   flexDirection: 'column' as const,
   gap: 'var(--space-4)',
 };
+const DEFAULT_ACCESS_OPTIONS: { value: AccessLevel; label: string }[] = [
+  { value: 'free', label: ACCESS_LABELS.free },
+  { value: 'vip', label: ACCESS_LABELS.vip },
+];
 
 export default function ArticleEditorPage() {
   const navigate = useNavigate();
@@ -97,6 +102,31 @@ export default function ArticleEditorPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [accessOptions, setAccessOptions] = useState(DEFAULT_ACCESS_OPTIONS);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const plans = await getMembershipPlans();
+        if (!alive) return;
+        const vipPlan =
+          plans.find((plan) => plan.level === 'vip') ??
+          plans.find((plan) => plan.level?.toLowerCase?.() === 'vip');
+        const vipLabel = vipPlan?.name?.trim() || ACCESS_LABELS.vip;
+        setAccessOptions([
+          { value: 'free', label: ACCESS_LABELS.free },
+          { value: 'vip', label: vipLabel },
+        ]);
+      } catch {
+        if (!alive) return;
+        setAccessOptions(DEFAULT_ACCESS_OPTIONS);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const loadArticle = useCallback(async () => {
     if (!id) return;
@@ -442,15 +472,16 @@ export default function ArticleEditorPage() {
                 </FormField>
                 <FormField
                   label="阅读权限"
-                  hint={form.access === 'vip' ? '仅创始会员可读' : '所有人可读'}
+                  hint={
+                    form.access === 'vip'
+                      ? `仅${accessOptions.find((o) => o.value === 'vip')?.label ?? ACCESS_LABELS.vip}可读`
+                      : '所有人可读'
+                  }
                 >
                   <Segmented<AccessLevel>
                     value={form.access}
                     onChange={(v) => set('access', v)}
-                    options={[
-                      { value: 'free', label: ACCESS_LABELS.free },
-                      { value: 'vip', label: ACCESS_LABELS.vip },
-                    ]}
+                    options={accessOptions}
                   />
                 </FormField>
               </div>
