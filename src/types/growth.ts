@@ -11,6 +11,33 @@ export type ArticleStatus = 'draft' | 'published';
 /** 主题分类标识 */
 export type TopicSlug = 'wealth' | 'ai' | 'growth' | 'life-design';
 
+/* ---------- 正文 Block 结构 ---------- */
+
+/** 内容块类型 */
+export type BlockType = 'h1' | 'h2' | 'p' | 'quote' | 'list' | 'image' | 'divider';
+
+/**
+ * 正文内容块。
+ * - list：text 以换行分隔每一项
+ * - image：text 存放图片 URL
+ * - divider：忽略 text
+ */
+export interface Block {
+  id: string;
+  type: BlockType;
+  text: string;
+}
+
+export const BLOCK_LABELS: Record<BlockType, string> = {
+  h1: '大标题 H1',
+  h2: '小标题 H2',
+  p: '段落',
+  quote: '引用',
+  list: '列表',
+  image: '图片',
+  divider: '分割线',
+};
+
 export interface Topic {
   id: string;
   slug: TopicSlug;
@@ -38,6 +65,7 @@ export interface Article {
   likes: number;
   publishedAt: string | null; // 草稿为 null
   updatedAt: string;
+  content?: Block[]; // 正文内容块
 }
 
 /* ---------- 标签映射（UI 展示） ---------- */

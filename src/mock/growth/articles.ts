@@ -15,6 +15,7 @@ import type {
   AccessLevel,
   Article,
   ArticleStatus,
+  Block,
   TopicSlug,
 } from '../../types/growth';
 
@@ -310,4 +311,64 @@ export async function deleteArticle(id: string): Promise<{ success: boolean }> {
   await delay(200);
   ARTICLES = ARTICLES.filter((a) => a.id !== id);
   return { success: true };
+}
+
+/* ---------- 新建 / 更新 ---------- */
+
+/** 创建 / 更新时的入参（不含服务端生成字段） */
+export interface ArticleInput {
+  title: string;
+  titleEn?: string;
+  slug: string;
+  subtitle?: string;
+  summary?: string;
+  cover?: string;
+  topic: TopicSlug;
+  access: AccessLevel;
+  status: ArticleStatus;
+  author: string;
+  tags: string[];
+  readingTime: number;
+  publishedAt: string | null;
+  content: Block[];
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** 创建文章（Mock） */
+export async function createArticle(input: ArticleInput): Promise<Article> {
+  await delay(300);
+  const article: Article = {
+    id: `a-${Date.now()}`,
+    ...input,
+    views: 0,
+    likes: 0,
+    publishedAt:
+      input.status === 'published' ? input.publishedAt ?? today() : null,
+    updatedAt: today(),
+  };
+  ARTICLES = [article, ...ARTICLES];
+  return article;
+}
+
+/** 更新文章（Mock） */
+export async function updateArticle(
+  id: string,
+  input: ArticleInput
+): Promise<Article> {
+  await delay(300);
+  const idx = ARTICLES.findIndex((a) => a.id === id);
+  if (idx === -1) throw new Error('文章不存在');
+  const prev = ARTICLES[idx];
+  const updated: Article = {
+    ...prev,
+    ...input,
+    publishedAt:
+      input.status === 'published'
+        ? input.publishedAt ?? prev.publishedAt ?? today()
+        : null,
+    updatedAt: today(),
+  };
+  ARTICLES[idx] = updated;
+  return updated;
 }
