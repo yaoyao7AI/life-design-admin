@@ -110,3 +110,51 @@
   background: var(--color-danger-soft);
   color: var(--color-danger);
 }
+
+/* ---------- Topic management ---------- */
+.topic-form-card {
+  margin-bottom: var(--space-4);
+}
+.topic-form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.topic-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 220px;
+  flex: 1 1 240px;
+}
+.topic-form__label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.topic-form__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.topic-error-card {
+  margin-bottom: var(--space-4);
+  border-color: var(--color-danger-soft);
+}
+.topic-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--color-danger);
+}
+.topic-name {
+  font-weight: 550;
+}
+.topic-slug {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-muted);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}
