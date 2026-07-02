@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import Icon from '../ui/Icon';
 import {
   BLOCK_LABELS,
   type Block,
   type BlockType,
 } from '../../types/growth';
+import { deleteUpload, uploadImage, type UploadAsset } from '../../api/upload';
 
 interface BlockEditorProps {
   value: Block[];
@@ -25,6 +27,82 @@ const PLACEHOLDERS: Record<BlockType, string> = {
 };
 
 export default function BlockEditor({ value, onChange }: BlockEditorProps) {
+  const [uploadingMap, setUploadingMap] = useState<Record<string, boolean>>({});
+  const [uploadStatusMap, setUploadStatusMap] = useState<
+    Record<string, 'idle' | 'success' | 'fail'>
+  >({});
+  const [uploadErrorMap, setUploadErrorMap] = useState<Record<string, string>>({});
+  const [retryFileMap, setRetryFileMap] = useState<Record<string, File | null>>({});
+  const [uploadAssetMap, setUploadAssetMap] = useState<Record<string, UploadAsset | null>>({});
+
+  const parseError = (err: unknown) =>
+    err instanceof Error ? err.message : '上传失败，请稍后重试。';
+
+  const setUploading = (id: string, uploading: boolean) => {
+    setUploadingMap((prev) => ({ ...prev, [id]: uploading }));
+  };
+
+  const setStatus = (id: string, status: 'idle' | 'success' | 'fail') => {
+    setUploadStatusMap((prev) => ({ ...prev, [id]: status }));
+  };
+
+  const clearUploadState = (id: string) => {
+    setUploadingMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setUploadStatusMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setUploadErrorMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setRetryFileMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setUploadAssetMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const deleteUploadedAsset = async (blockId: string) => {
+    const assetId = uploadAssetMap[blockId]?.id;
+    if (!assetId) return;
+    await deleteUpload(assetId).catch(() => undefined);
+    setUploadAssetMap((prev) => ({ ...prev, [blockId]: null }));
+  };
+
+  const uploadBlockImage = async (blockId: string, file: File) => {
+    setUploading(blockId, true);
+    setStatus(blockId, 'idle');
+    setUploadErrorMap((prev) => ({ ...prev, [blockId]: '' }));
+    setRetryFileMap((prev) => ({ ...prev, [blockId]: file }));
+    try {
+      const oldAssetId = uploadAssetMap[blockId]?.id;
+      const uploaded = await uploadImage(file);
+      if (oldAssetId && oldAssetId !== uploaded.id) {
+        await deleteUpload(oldAssetId).catch(() => undefined);
+      }
+      setUploadAssetMap((prev) => ({ ...prev, [blockId]: uploaded }));
+      updateBlock(blockId, { text: uploaded.url });
+      setStatus(blockId, 'success');
+    } catch (err) {
+      setStatus(blockId, 'fail');
+      setUploadErrorMap((prev) => ({ ...prev, [blockId]: parseError(err) }));
+    } finally {
+      setUploading(blockId, false);
+    }
+  };
+
   const addBlock = (type: BlockType) => {
     onChange([...value, { id: uid(), type, text: '' }]);
   };
@@ -33,7 +111,9 @@ export default function BlockEditor({ value, onChange }: BlockEditorProps) {
     onChange(value.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   };
 
-  const removeBlock = (id: string) => {
+  const removeBlock = async (id: string) => {
+    await deleteUploadedAsset(id);
+    clearUploadState(id);
     onChange(value.filter((b) => b.id !== id));
   };
 
@@ -92,14 +172,34 @@ export default function BlockEditor({ value, onChange }: BlockEditorProps) {
                 type="button"
                 className="block__op block__op--danger"
                 title="删除"
-                onClick={() => removeBlock(block.id)}
+                onClick={() => void removeBlock(block.id)}
               >
                 <Icon name="trash" size={14} />
               </button>
             </div>
           </div>
 
-          <div className="block__body">{renderBlockInput(block, updateBlock)}</div>
+          <div className="block__body">
+            {renderBlockInput({
+              block,
+              update: updateBlock,
+              uploading: uploadingMap[block.id] ?? false,
+              status: uploadStatusMap[block.id] ?? 'idle',
+              error: uploadErrorMap[block.id] ?? '',
+              asset: uploadAssetMap[block.id] ?? null,
+              onUpload: (file) => uploadBlockImage(block.id, file),
+              onRetry: () => {
+                const retryFile = retryFileMap[block.id];
+                if (!retryFile) return Promise.resolve();
+                return uploadBlockImage(block.id, retryFile);
+              },
+              onClearImage: async () => {
+                await deleteUploadedAsset(block.id);
+                setStatus(block.id, 'idle');
+                updateBlock(block.id, { text: '' });
+              },
+            })}
+          </div>
         </div>
       ))}
 
@@ -121,10 +221,29 @@ export default function BlockEditor({ value, onChange }: BlockEditorProps) {
   );
 }
 
-function renderBlockInput(
-  block: Block,
-  update: (id: string, patch: Partial<Block>) => void
-) {
+interface RenderBlockInputProps {
+  block: Block;
+  update: (id: string, patch: Partial<Block>) => void;
+  uploading: boolean;
+  status: 'idle' | 'success' | 'fail';
+  error: string;
+  asset: UploadAsset | null;
+  onUpload: (file: File) => Promise<void>;
+  onRetry: () => Promise<void>;
+  onClearImage: () => Promise<void>;
+}
+
+function renderBlockInput({
+  block,
+  update,
+  uploading,
+  status,
+  error,
+  asset,
+  onUpload,
+  onRetry,
+  onClearImage,
+}: RenderBlockInputProps) {
   if (block.type === 'divider') {
     return <div className="block__divider" aria-hidden="true" />;
   }
@@ -138,6 +257,49 @@ function renderBlockInput(
           placeholder={PLACEHOLDERS.image}
           onChange={(e) => update(block.id, { text: e.target.value })}
         />
+        <div className="block__image-actions">
+          <label className="ui-btn ui-btn--secondary ui-btn--sm">
+            选择图片
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void onUpload(file);
+                e.currentTarget.value = '';
+              }}
+            />
+          </label>
+          {block.text && (
+            <button
+              type="button"
+              className="ui-btn ui-btn--ghost ui-btn--sm"
+              onClick={() => void onClearImage()}
+              disabled={uploading}
+            >
+              清空
+            </button>
+          )}
+          <span className="block__upload-status">
+            {uploading && 'Uploading...'}
+            {!uploading && status === 'success' && asset && (
+              <span>Success: {asset.width}x{asset.height}</span>
+            )}
+            {!uploading && status === 'fail' && (
+              <span>
+                Fail: {error}{' '}
+                <button
+                  type="button"
+                  className="block__upload-retry"
+                  onClick={() => void onRetry()}
+                >
+                  Retry
+                </button>
+              </span>
+            )}
+          </span>
+        </div>
         {block.text && (
           <img className="block__image-preview" src={block.text} alt="" />
         )}

@@ -564,3 +564,29 @@
 .ui-upload--filled:hover .ui-upload__overlay {
   opacity: 1;
 }
+.ui-upload__status {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(17, 24, 39, 0.72);
+  color: #fff;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+.ui-upload__error {
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+}
+.ui-upload__retry {
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+}
