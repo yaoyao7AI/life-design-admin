@@ -1,0 +1,112 @@
+/* ============================================================
+   成长模块页面样式
+   ============================================================ */
+
+/* ---------- Filter Bar ---------- */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+.filter-bar__search {
+  width: 260px;
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+.filter-bar__select {
+  width: 150px;
+}
+.filter-bar__spacer {
+  flex: 1;
+}
+
+/* ---------- Article title cell ---------- */
+.article-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 240px;
+}
+.article-cell__cover {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  background: var(--color-muted);
+  flex-shrink: 0;
+}
+.article-cell__cover--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+}
+.article-cell__text {
+  min-width: 0;
+}
+.article-cell__title {
+  font-weight: 550;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+.article-cell__en {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+/* ---------- Topic chip ---------- */
+.topic-chip {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Metric number ---------- */
+.metric {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+.metric--muted {
+  color: var(--color-text-tertiary);
+}
+
+/* ---------- Row actions ---------- */
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  justify-content: flex-end;
+}
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.row-action:hover {
+  background: var(--color-muted);
+  color: var(--color-text);
+}
+.row-action--danger:hover {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from './components/layout/AdminLayout';
 import ArticlesPage from './pages/growth/ArticlesPage';
+import ArticleEditorPage from './pages/growth/ArticleEditorPage';
 import TopicsPage from './pages/growth/TopicsPage';
 import HomeConfigPage from './pages/growth/HomeConfigPage';
 import CoursesPage from './pages/growth/CoursesPage';
@@ -21,6 +22,11 @@ function App() {
           <Route element={<AdminLayout />}>
             <Route index element={<Navigate to="/growth/articles" replace />} />
             <Route path="/growth/articles" element={<ArticlesPage />} />
+            <Route path="/growth/articles/new" element={<ArticleEditorPage />} />
+            <Route
+              path="/growth/articles/:id/edit"
+              element={<ArticleEditorPage />}
+            />
             <Route path="/growth/topics" element={<TopicsPage />} />
             <Route path="/growth/home" element={<HomeConfigPage />} />
             <Route path="/growth/courses" element={<CoursesPage />} />
