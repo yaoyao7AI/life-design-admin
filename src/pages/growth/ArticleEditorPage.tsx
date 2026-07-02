@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import BlockEditor from '../../components/growth/BlockEditor';
 import {
@@ -7,6 +7,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  EmptyState,
   FormField,
   Icon,
   ImageUpload,
@@ -17,11 +18,13 @@ import {
   Textarea,
 } from '../../components/ui';
 import {
-  createArticle,
-  fetchArticleById,
-  updateArticle,
+  createGrowthArticle,
+  deleteGrowthArticle,
+  getGrowthArticleById,
+  publishGrowthArticle,
+  updateGrowthArticle,
   type ArticleInput,
-} from '../../mock/growth/articles';
+} from '../../api/growth/articles';
 import {
   ACCESS_LABELS,
   STATUS_LABELS,
@@ -37,6 +40,8 @@ import { generateSlug } from '../../utils/slug';
 import './editor.css';
 
 const USER_SITE = 'https://designyourlife.app';
+const parseError = (error: unknown) =>
+  error instanceof Error ? error.message : '请求失败，请稍后重试。';
 
 interface FormState {
   title: string;
@@ -88,24 +93,36 @@ export default function ArticleEditorPage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
+  const loadArticle = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    setLoadError(null);
+    setNotFound(false);
+    try {
+      const article = await getGrowthArticleById(id);
+      setForm(fromArticle(article));
+      setSlugTouched(true);
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        setNotFound(true);
+      } else {
+        setLoadError(parseError(err));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   // 编辑模式：回填数据
   useEffect(() => {
     if (!id) return;
-    let alive = true;
-    (async () => {
-      const article = await fetchArticleById(id);
-      if (!alive) return;
-      if (article) {
-        setForm(fromArticle(article));
-        setSlugTouched(true);
-      }
-      setLoading(false);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [id]);
+    loadArticle();
+  }, [id, loadArticle]);
 
   // 自动生成 slug（未手动编辑时）
   useEffect(() => {
@@ -133,26 +150,66 @@ export default function ArticleEditorPage() {
     content: form.content,
   });
 
-  const save = async (status: ArticleStatus) => {
+  const saveDraft = async () => {
     if (!form.title.trim()) {
-      alert('请填写文章标题');
+      setActionError('请填写文章标题');
       return;
     }
     setSaving(true);
+    setActionError(null);
     try {
-      const input = buildInput(status);
+      const input = buildInput('draft');
       if (isEdit && id) {
-        await updateArticle(id, input);
+        await updateGrowthArticle(id, input);
       } else {
-        await createArticle(input);
+        await createGrowthArticle(input);
       }
-      alert(status === 'published' ? '已发布' : '草稿已保存');
       navigate('/growth/articles');
     } catch (e) {
-      alert('保存失败，请重试');
-      console.error(e);
+      setActionError(parseError(e));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const publish = async () => {
+    if (!form.title.trim()) {
+      setActionError('请填写文章标题');
+      return;
+    }
+    setSaving(true);
+    setActionError(null);
+    try {
+      if (isEdit && id) {
+        await publishGrowthArticle(id, {
+          publishedAt: form.publishedAt || null,
+        });
+      } else {
+        const created = await createGrowthArticle(buildInput('draft'));
+        await publishGrowthArticle(created.id, {
+          publishedAt: form.publishedAt || null,
+        });
+      }
+      navigate('/growth/articles');
+    } catch (e) {
+      setActionError(parseError(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!id) return;
+    if (!window.confirm('确定删除这篇文章吗？')) return;
+    setRemoving(true);
+    setActionError(null);
+    try {
+      await deleteGrowthArticle(id);
+      navigate('/growth/articles');
+    } catch (e) {
+      setActionError(parseError(e));
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -187,6 +244,40 @@ export default function ArticleEditorPage() {
     );
   }
 
+  if (notFound) {
+    return (
+      <Card>
+        <EmptyState
+          icon="inbox"
+          title="文章不存在"
+          description="这篇文章可能已被删除。"
+          action={
+            <Button variant="ghost" onClick={() => navigate('/growth/articles')}>
+              返回列表
+            </Button>
+          }
+        />
+      </Card>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Card>
+        <EmptyState
+          icon="inbox"
+          title="加载失败"
+          description={loadError}
+          action={
+            <Button variant="ghost" onClick={loadArticle}>
+              重试
+            </Button>
+          }
+        />
+      </Card>
+    );
+  }
+
   return (
     <>
       <div className="editor-toolbar">
@@ -208,23 +299,42 @@ export default function ArticleEditorPage() {
             <Icon name="eye" size={16} />
             预览
           </Button>
+          {isEdit && (
+            <Button variant="danger" onClick={remove} disabled={saving || removing}>
+              <Icon name="trash" size={16} />
+              删除
+            </Button>
+          )}
           <Button
             variant="secondary"
-            onClick={() => save('draft')}
-            disabled={saving}
+            onClick={saveDraft}
+            disabled={saving || removing}
           >
             保存草稿
           </Button>
           <Button
             variant="primary"
-            onClick={() => save('published')}
-            disabled={saving}
+            onClick={publish}
+            disabled={saving || removing}
           >
             <Icon name="sparkles" size={16} />
             发布
           </Button>
         </div>
       </div>
+
+      {actionError && (
+        <Card style={{ marginBottom: 'var(--space-4)' }}>
+          <CardBody>
+            <div className="topic-error">
+              <span>{actionError}</span>
+              <Button size="sm" variant="ghost" onClick={() => setActionError(null)}>
+                关闭
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       <div className="editor-grid">
         <div className="editor-main">

@@ -12,10 +12,10 @@ import {
   type Column,
 } from '../../components/ui';
 import {
-  deleteArticle,
-  fetchArticles,
+  deleteGrowthArticle,
+  getGrowthArticles,
   type ArticleQuery,
-} from '../../mock/growth/articles';
+} from '../../api/growth/articles';
 import {
   ACCESS_LABELS,
   ACCESS_OPTIONS,
@@ -35,6 +35,8 @@ import './growth.css';
 // 用户端站点地址（预览跳转）。接入正式环境时替换即可。
 const USER_SITE = 'https://designyourlife.app';
 const PAGE_SIZE = 8;
+const parseError = (error: unknown) =>
+  error instanceof Error ? error.message : '请求失败，请稍后重试。';
 
 interface Filters {
   keyword: string;
@@ -57,13 +59,20 @@ export default function ArticlesPage() {
   const [data, setData] = useState<Article[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async (query: ArticleQuery) => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetchArticles(query);
+      const res = await getGrowthArticles(query);
       setData(res.list);
       setTotal(res.total);
+    } catch (err) {
+      setError(parseError(err));
+      setData([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -89,11 +98,19 @@ export default function ArticlesPage() {
 
   const handleDelete = async (article: Article) => {
     if (!window.confirm(`确定删除文章「${article.title}」吗？`)) return;
-    await deleteArticle(article.id);
-    // 删除后若当前页空了则回退一页
-    const nextPage = data.length === 1 && page > 1 ? page - 1 : page;
-    setPage(nextPage);
-    load({ ...filters, page: nextPage, pageSize: PAGE_SIZE });
+    setDeletingId(article.id);
+    setError(null);
+    try {
+      await deleteGrowthArticle(article.id);
+      // 删除后若当前页空了则回退一页
+      const nextPage = data.length === 1 && page > 1 ? page - 1 : page;
+      setPage(nextPage);
+      load({ ...filters, page: nextPage, pageSize: PAGE_SIZE });
+    } catch (err) {
+      setError(parseError(err));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handlePreview = (article: Article) => {
@@ -196,6 +213,7 @@ export default function ArticlesPage() {
           <button
             className="row-action row-action--danger"
             title="删除"
+            disabled={deletingId === a.id}
             onClick={() => handleDelete(a)}
           >
             <Icon name="trash" size={16} />
@@ -262,6 +280,18 @@ export default function ArticlesPage() {
       </div>
 
       <div className="ui-card" style={{ overflow: 'hidden' }}>
+        {error && (
+          <div className="topic-error" style={{ padding: 'var(--space-4)' }}>
+            <span>{error}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => load({ ...filters, page, pageSize: PAGE_SIZE })}
+            >
+              重试
+            </Button>
+          </div>
+        )}
         <Table
           columns={columns}
           data={data}
