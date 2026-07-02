@@ -210,3 +210,114 @@
     grid-column: auto;
   }
 }
+
+/* ---------- Analytics ---------- */
+.analytics-block {
+  margin-bottom: var(--space-4);
+}
+.analytics-title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+.analytics-cards {
+  display: grid;
+  gap: var(--space-3);
+}
+.analytics-cards--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.analytics-cards--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.analytics-metric-card .ui-card__body {
+  padding: var(--space-4);
+}
+.analytics-metric-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.analytics-metric-value {
+  margin-top: var(--space-2);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.analytics-chart {
+  width: 100%;
+}
+.analytics-chart__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.analytics-chart__axis {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+}
+.analytics-chart__grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+.analytics-chart__line {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.analytics-chart__line--views {
+  stroke: #2563eb;
+}
+.analytics-chart__line--members {
+  stroke: #10b981;
+}
+.analytics-chart__line--articles {
+  stroke: #f59e0b;
+}
+.analytics-chart__label {
+  fill: var(--color-text-tertiary);
+  font-size: 11px;
+}
+.analytics-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+.dot--views {
+  background: #2563eb;
+}
+.dot--members {
+  background: #10b981;
+}
+.dot--articles {
+  background: #f59e0b;
+}
+
+@media (max-width: 1080px) {
+  .analytics-cards--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .analytics-cards--4,
+  .analytics-cards--3 {
+    grid-template-columns: 1fr;
+  }
+  .analytics-legend {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
