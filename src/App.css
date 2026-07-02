@@ -1,0 +1,4 @@
+/* 应用容器。全局设计令牌与基础样式见 src/styles/tokens.css */
+.app {
+  min-height: 100vh;
+}

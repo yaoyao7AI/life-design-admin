@@ -1,0 +1,221 @@
+.play-affirmation {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.play-container {
+  width: 100%;
+  max-width: 800px;
+}
+
+.affirmation-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-header {
+  padding: 32px 32px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+}
+
+.affirmation-title {
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.affirmation-code {
+  font-size: 14px;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+.card-body {
+  padding: 32px;
+}
+
+.affirmation-text {
+  font-size: 18px;
+  line-height: 1.8;
+  color: #333;
+  margin-bottom: 32px;
+  text-align: center;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.audio-section {
+  margin-top: 24px;
+}
+
+.audio-player {
+  width: 100%;
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.audio-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-play,
+.btn-pause {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.btn-play {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-play:hover {
+  background-color: #218838;
+}
+
+.btn-pause {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.btn-pause:hover {
+  background-color: #e0a800;
+}
+
+.no-audio-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.no-audio-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.no-audio-text {
+  font-size: 16px;
+}
+
+.card-footer {
+  padding: 24px 32px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.share-section {
+  text-align: center;
+}
+
+.share-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.share-url {
+  font-size: 13px;
+  color: #007bff;
+  word-break: break-all;
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.btn-copy {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-copy:hover {
+  background-color: #0056b3;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: white;
+}
+
+.error-container {
+  background: white;
+  border-radius: 16px;
+  padding: 60px 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.error-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.error-message {
+  font-size: 20px;
+  color: #dc3545;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.error-hint {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .affirmation-title {
+    font-size: 22px;
+  }
+
+  .affirmation-text {
+    font-size: 16px;
+  }
+
+  .card-header,
+  .card-body,
+  .card-footer {
+    padding: 24px 20px;
+  }
+}
+
+
+
