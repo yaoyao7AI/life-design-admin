@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api/growth/topics';
+const API_BASE_URL = '/api/growth/cms/topics';
+const FALLBACK_API_BASE_URL = '/api/growth/topics';
 
 export interface GrowthTopic {
   id: string;
@@ -33,14 +34,54 @@ export interface SortGrowthTopicsPayload {
   topics: SortGrowthTopicItem[];
 }
 
-export const getGrowthTopics = async (): Promise<GrowthTopic[]> => {
-  const response = await axios.get<GrowthTopic[] | { list: GrowthTopic[] }>(
-    API_BASE_URL
-  );
-  if (Array.isArray(response.data)) {
-    return response.data;
+type BackendTopic = Record<string, unknown>;
+
+const fromBackendTopic = (raw: BackendTopic): GrowthTopic => ({
+  id: String(raw.id ?? ''),
+  slug: String(raw.slug ?? ''),
+  name: String(raw.name ?? ''),
+  order: Number(raw.sort_order ?? raw.order ?? 0),
+  articleCount: Number(raw.article_count ?? raw.articleCount ?? 0),
+  createdAt: String(raw.created_at ?? raw.createdAt ?? ''),
+  updatedAt: raw.updated_at != null ? String(raw.updated_at) : undefined,
+});
+
+const unwrapTopicItems = (raw: unknown): BackendTopic[] => {
+  if (Array.isArray(raw)) return raw as BackendTopic[];
+  if (raw && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    const data = obj.data;
+    if (Array.isArray(data)) return data as BackendTopic[];
+    if (data && typeof data === 'object') {
+      const nested = data as Record<string, unknown>;
+      if (Array.isArray(nested.items)) return nested.items as BackendTopic[];
+      if (Array.isArray(nested.list)) return nested.list as BackendTopic[];
+    }
+    if (Array.isArray(obj.items)) return obj.items as BackendTopic[];
+    if (Array.isArray(obj.list)) return obj.list as BackendTopic[];
   }
-  return response.data.list ?? [];
+  return [];
+};
+
+const withTopicsFallback = async <T>(request: (base: string) => Promise<T>): Promise<T> => {
+  try {
+    return await request(API_BASE_URL);
+  } catch (error) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      (error as { response?: { status?: number } }).response?.status === 404
+    ) {
+      return request(FALLBACK_API_BASE_URL);
+    }
+    throw error;
+  }
+};
+
+export const getGrowthTopics = async (): Promise<GrowthTopic[]> => {
+  const response = await withTopicsFallback((base) => axios.get(base));
+  return unwrapTopicItems(response.data).map(fromBackendTopic);
 };
 
 export const createGrowthTopic = async (

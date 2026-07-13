@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { AccessLevel, Article, ArticleStatus, Block, TopicSlug } from '../../types/growth';
+import { getGrowthTopics } from './topics';
 
 const API_BASE_URL = '/api/growth/cms/articles';
 const FALLBACK_API_BASE_URL = '/api/growth/articles';
@@ -100,6 +101,32 @@ const toBlocks = (value: unknown): Block[] | undefined => {
   return undefined;
 };
 
+let topicSlugToIdCache: Map<string, number> | null = null;
+
+const unwrapApiData = <T>(raw: unknown): T => {
+  if (raw && typeof raw === 'object' && 'data' in (raw as object)) {
+    return (raw as { data: T }).data;
+  }
+  return raw as T;
+};
+
+const loadTopicSlugToIdMap = async (): Promise<Map<string, number>> => {
+  if (topicSlugToIdCache) return topicSlugToIdCache;
+  const topics = await getGrowthTopics();
+  topicSlugToIdCache = new Map(
+    topics
+      .map((topic) => [topic.slug, Number(topic.id)] as const)
+      .filter(([, id]) => Number.isFinite(id) && id > 0)
+  );
+  return topicSlugToIdCache;
+};
+
+const resolveTopicId = async (slug: TopicSlug): Promise<number | null> => {
+  const map = await loadTopicSlugToIdMap();
+  const id = map.get(slug);
+  return id && id > 0 ? id : null;
+};
+
 const fromBackendArticle = (raw: BackendArticle): Article => ({
   id: String(raw.id ?? raw.article_id ?? ''),
   slug: String(raw.slug ?? ''),
@@ -121,9 +148,11 @@ const fromBackendArticle = (raw: BackendArticle): Article => ({
   content: toBlocks(raw.content),
 });
 
-const toBackendPayload = (data: ArticleInput) => {
+const toBackendPayload = async (data: ArticleInput) => {
   const membershipTier = data.access === 'vip' ? 'founder' : 'free';
-  const visibility = data.status === 'published' ? 'public' : 'draft';
+  const visibility = data.access === 'vip' ? 'members_only' : 'public';
+  const topicId = await resolveTopicId(data.topic);
+
   return {
     title: data.title,
     title_en: data.titleEn,
@@ -131,55 +160,54 @@ const toBackendPayload = (data: ArticleInput) => {
     subtitle: data.subtitle,
     summary: data.summary,
     cover_url: data.cover,
-    topic_id: data.topic,
+    topic_id: topicId,
     reading_time_minutes: data.readingTime,
     author_id: data.author,
+    status: data.status,
     visibility,
     membership_tier: membershipTier,
-    // backward-compatible fields
-    topic: data.topic,
-    access: data.access,
-    status: data.status,
-    author: data.author,
-    cover: data.cover,
-    readingTime: data.readingTime,
     published_at: data.publishedAt,
-    publishedAt: data.publishedAt,
     tags: data.tags,
     content: data.content,
   };
 };
 
 const normalizePaginated = (raw: any): Paginated<Article> => {
+  const payload = unwrapApiData<any>(raw);
   const listSource =
+    payload?.items ??
+    payload?.list ??
+    payload?.data?.items ??
+    payload?.data?.list ??
+    payload?.data ??
     raw?.list ??
     raw?.items ??
-    raw?.data?.list ??
     raw?.data?.items ??
+    raw?.data?.list ??
     raw?.data ??
     [];
+  const pagination = payload?.pagination ?? raw?.pagination ?? payload?.data?.pagination;
   const list = Array.isArray(listSource) ? listSource.map(fromBackendArticle) : [];
-  const total = toNum(raw?.total ?? raw?.count ?? raw?.data?.total, list.length);
-  const page = toNum(raw?.page ?? raw?.data?.page, 1);
-  const pageSize = toNum(raw?.pageSize ?? raw?.page_size ?? raw?.data?.page_size, 8);
+  const total = toNum(
+    pagination?.total ?? payload?.total ?? raw?.total ?? raw?.count ?? payload?.count,
+    list.length
+  );
+  const page = toNum(pagination?.page ?? payload?.page ?? raw?.page, 1);
+  const pageSize = toNum(
+    pagination?.page_size ?? pagination?.pageSize ?? payload?.page_size ?? raw?.page_size,
+    8
+  );
   return { list, total, page, pageSize };
 };
 
 export const getGrowthArticles = async (
   params: ArticleQuery = {}
 ): Promise<Paginated<Article>> => {
+  const topicId = params.topic ? await resolveTopicId(params.topic) : null;
   const query = {
     keyword: params.keyword,
-    topic: params.topic,
-    topic_id: params.topic,
-    status: params.status,
-    visibility:
-      params.status === 'published'
-        ? 'public'
-        : params.status === 'draft'
-        ? 'draft'
-        : undefined,
-    access: params.access,
+    topic_id: topicId ?? undefined,
+    status: params.status || undefined,
     membership_tier:
       params.access === 'vip' ? 'founder' : params.access === 'free' ? 'free' : undefined,
     page: params.page,
@@ -192,24 +220,24 @@ export const getGrowthArticles = async (
 
 export const getGrowthArticleById = async (id: string): Promise<Article> => {
   const response = await withArticlesFallback((base) => axios.get(`${base}/${id}`));
-  return fromBackendArticle(response.data);
+  return fromBackendArticle(unwrapApiData(response.data));
 };
 
 export const createGrowthArticle = async (data: ArticleInput): Promise<Article> => {
-  const response = await withArticlesFallback((base) =>
-    axios.post(base, toBackendPayload(data))
-  );
-  return fromBackendArticle(response.data);
+  const payload = await toBackendPayload(data);
+  const response = await withArticlesFallback((base) => axios.post(base, payload));
+  return fromBackendArticle(unwrapApiData(response.data));
 };
 
 export const updateGrowthArticle = async (
   id: string,
   data: ArticleInput
 ): Promise<Article> => {
+  const payload = await toBackendPayload(data);
   const response = await withArticlesFallback((base) =>
-    axios.put(`${base}/${id}`, toBackendPayload(data))
+    axios.put(`${base}/${id}`, payload)
   );
-  return fromBackendArticle(response.data);
+  return fromBackendArticle(unwrapApiData(response.data));
 };
 
 export const deleteGrowthArticle = async (id: string): Promise<void> => {
@@ -229,5 +257,5 @@ export const publishGrowthArticle = async (
   const response = await withArticlesFallback((base) =>
     axios.patch(`${base}/${id}/publish`, payload)
   );
-  return fromBackendArticle(response.data);
+  return fromBackendArticle(unwrapApiData(response.data));
 };

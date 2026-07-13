@@ -41,8 +41,17 @@ import { generateSlug } from '../../utils/slug';
 import './editor.css';
 
 const USER_SITE = (import.meta.env.VITE_USER_SITE as string | undefined) || '';
-const parseError = (error: unknown) =>
-  error instanceof Error ? error.message : '请求失败，请稍后重试。';
+const parseError = (error: unknown) => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    (error as { response?: { data?: { message?: string } } }).response?.data?.message
+  ) {
+    return (error as { response: { data: { message: string } } }).response.data.message;
+  }
+  return error instanceof Error ? error.message : '请求失败，请稍后重试。';
+};
 
 interface FormState {
   title: string;
