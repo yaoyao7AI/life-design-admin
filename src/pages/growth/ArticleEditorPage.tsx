@@ -118,10 +118,25 @@ export default function ArticleEditorPage() {
 
   const topicOptions = useMemo(() => {
     if (topics.length > 0) {
-      return topics.map((topic) => ({ value: topic.slug, label: topic.name }));
+      return topics.map((topic) => ({
+        value: topic.slug?.trim() || String(topic.id),
+        label: topic.name,
+      }));
     }
     return TOPIC_OPTIONS;
   }, [topics]);
+
+  const resolveTopicValue = useCallback(
+    (current?: string) => {
+      const value = (current ?? '').trim();
+      if (topicOptions.length === 0) return value;
+      if (value && topicOptions.some((opt) => opt.value === value)) return value;
+      const byId = topics.find((topic) => String(topic.id) === value);
+      if (byId) return byId.slug?.trim() || String(byId.id);
+      return topicOptions[0]?.value ?? '';
+    },
+    [topicOptions, topics]
+  );
 
   useEffect(() => {
     let alive = true;
@@ -148,13 +163,6 @@ export default function ArticleEditorPage() {
 
         const sorted = [...topicList].sort((a, b) => a.order - b.order);
         setTopics(sorted);
-        if (!isEdit) {
-          setForm((prev) =>
-            prev.topic
-              ? prev
-              : { ...prev, topic: sorted[0]?.slug ?? '' }
-          );
-        }
       } catch {
         if (!alive) return;
         setAccessOptions(DEFAULT_ACCESS_OPTIONS);
@@ -166,7 +174,16 @@ export default function ArticleEditorPage() {
     return () => {
       alive = false;
     };
-  }, [isEdit]);
+  }, []);
+
+  // 主题列表就绪后，校正空值 / 无效值，避免 select 视觉上有选项但 form.topic 为空
+  useEffect(() => {
+    if (topicsLoading || topicOptions.length === 0) return;
+    setForm((prev) => {
+      const nextTopic = resolveTopicValue(prev.topic);
+      return nextTopic === prev.topic ? prev : { ...prev, topic: nextTopic };
+    });
+  }, [topicsLoading, topicOptions, resolveTopicValue]);
 
   const loadArticle = useCallback(async () => {
     if (!id) return;
@@ -175,7 +192,16 @@ export default function ArticleEditorPage() {
     setNotFound(false);
     try {
       const article = await getGrowthArticleById(id);
-      setForm(fromArticle(article));
+      setForm((prev) => {
+        const next = fromArticle(article);
+        // 文章未绑定主题时，保留已同步的主题，或回退到当前可用主题
+        const topic =
+          resolveTopicValue(next.topic) ||
+          resolveTopicValue(prev.topic) ||
+          next.topic ||
+          prev.topic;
+        return { ...next, topic };
+      });
       setSlugTouched(true);
     } catch (err: any) {
       if (err?.response?.status === 404) {
@@ -186,7 +212,7 @@ export default function ArticleEditorPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, resolveTopicValue]);
 
   // 编辑模式：回填数据
   useEffect(() => {
@@ -210,7 +236,7 @@ export default function ArticleEditorPage() {
     slug: form.slug.trim() || generateSlug(form.titleEn, form.title),
     summary: form.summary.trim() || undefined,
     cover: form.cover || undefined,
-    topic: form.topic,
+    topic: resolveTopicValue(form.topic),
     access: form.access,
     status,
     author: form.author.trim() || '未署名',
@@ -225,14 +251,16 @@ export default function ArticleEditorPage() {
       setActionError('请填写文章标题');
       return;
     }
-    if (!form.topic) {
+    const topic = resolveTopicValue(form.topic);
+    if (!topic) {
       setActionError('请选择主题分类');
       return;
     }
+    if (topic !== form.topic) set('topic', topic);
     setSaving(true);
     setActionError(null);
     try {
-      const input = buildInput('draft');
+      const input = { ...buildInput('draft'), topic };
       if (isEdit && id) {
         await updateGrowthArticle(id, input);
       } else {
@@ -251,20 +279,23 @@ export default function ArticleEditorPage() {
       setActionError('请填写文章标题');
       return;
     }
-    if (!form.topic) {
+    const topic = resolveTopicValue(form.topic);
+    if (!topic) {
       setActionError('请选择主题分类');
       return;
     }
+    if (topic !== form.topic) set('topic', topic);
     setSaving(true);
     setActionError(null);
     try {
+      const input = { ...buildInput('published'), topic };
       if (isEdit && id) {
-        await updateGrowthArticle(id, buildInput('published'));
+        await updateGrowthArticle(id, input);
         await publishGrowthArticle(id, {
           publishedAt: form.publishedAt || null,
         });
       } else {
-        const created = await createGrowthArticle(buildInput('draft'));
+        const created = await createGrowthArticle({ ...buildInput('draft'), topic });
         await publishGrowthArticle(created.id, {
           publishedAt: form.publishedAt || null,
         });
@@ -531,7 +562,7 @@ export default function ArticleEditorPage() {
                 >
                   <Select
                     options={topicOptions}
-                    value={form.topic}
+                    value={resolveTopicValue(form.topic)}
                     onChange={(e) => set('topic', e.target.value as TopicSlug)}
                     disabled={topicsLoading || topicOptions.length === 0}
                   />
