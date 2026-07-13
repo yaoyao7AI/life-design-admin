@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '')
-  const apiProxyTarget = env.VITE_API_TARGET || 'http://123.56.17.118:3880'
+  const apiProxyTarget = env.VITE_API_TARGET || 'https://api.life-design.me'
 
   return {
     plugins: [react()],

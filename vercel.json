@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://123.56.17.118:3880/api/:path*"
+      "destination": "https://api.life-design.me/api/:path*"
     },
     {
       "source": "/(.*)",
