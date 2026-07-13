@@ -240,6 +240,7 @@ export const updateMostPopularConfig = async (
   const response = await axios.put(`${API_BASE_URL}/most-popular`, {
     title: 'Most Popular',
     article_limit: data.limit,
+    article_ids: data.articleIds,
     status: data.enabled ? 'active' : 'inactive',
   });
   return fromBackendSectionPopular(unwrapData(response.data));
