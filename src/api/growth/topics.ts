@@ -97,6 +97,7 @@ export const createGrowthTopic = async (
   const response = await withTopicsFallback((base) =>
     axios.post(base, {
       name: data.name,
+      slug: data.slug,
       sort_order: data.order ?? 0,
       status: 'active',
     })
@@ -111,6 +112,7 @@ export const updateGrowthTopic = async (
   const response = await withTopicsFallback((base) =>
     axios.put(`${base}/${id}`, {
       name: data.name,
+      slug: data.slug,
       sort_order: data.order,
       status: 'active',
     })

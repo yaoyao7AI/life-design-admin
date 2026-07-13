@@ -122,19 +122,30 @@ const ensureTopicCaches = async () => {
   topicSlugToNameCache = new Map();
   for (const topic of topics) {
     const id = Number(topic.id);
-    if (!Number.isFinite(id) || id <= 0 || !topic.slug) continue;
-    topicSlugToIdCache.set(topic.slug, id);
-    topicIdToSlugCache.set(id, topic.slug);
+    if (!Number.isFinite(id) || id <= 0) continue;
+    const idKey = String(topic.id);
+    topicSlugToIdCache.set(idKey, id);
+    topicIdToSlugCache.set(id, topic.slug?.trim() || idKey);
     topicIdToNameCache.set(id, topic.name);
-    topicSlugToNameCache.set(topic.slug, topic.name);
+    if (topic.slug?.trim()) {
+      topicSlugToIdCache.set(topic.slug.trim(), id);
+      topicSlugToNameCache.set(topic.slug.trim(), topic.name);
+    }
+    if (topic.name?.trim()) {
+      topicSlugToNameCache.set(topic.name.trim(), topic.name);
+    }
   }
 };
 
-const resolveTopicId = async (slug: TopicSlug): Promise<number | null> => {
-  if (!slug) return null;
+const resolveTopicId = async (slugOrId: TopicSlug): Promise<number | null> => {
+  const key = String(slugOrId ?? '').trim();
+  if (!key) return null;
   await ensureTopicCaches();
-  const id = topicSlugToIdCache?.get(slug);
-  return id && id > 0 ? id : null;
+  const cached = topicSlugToIdCache?.get(key);
+  if (cached && cached > 0) return cached;
+  const numeric = Number(key);
+  if (Number.isFinite(numeric) && numeric > 0) return numeric;
+  return null;
 };
 
 const resolveTopicFromRaw = async (
@@ -161,6 +172,16 @@ const resolveTopicFromRaw = async (
       topic: topicIdToSlugCache?.get(topicId) ?? String(topicId),
       topicName: topicName || topicIdToNameCache?.get(topicId),
     };
+  }
+
+  if (topicName && topicSlugToNameCache?.has(topicName)) {
+    const matched = (await getGrowthTopics()).find((item) => item.name === topicName);
+    if (matched?.id) {
+      return {
+        topic: matched.slug?.trim() || String(matched.id),
+        topicName: matched.name,
+      };
+    }
   }
 
   return { topic: '', topicName };
