@@ -90,8 +90,17 @@ const DEFAULT_CTA: MembershipCtaConfig = {
   buttonLink: '/membership',
 };
 
-const parseError = (error: unknown) =>
-  error instanceof Error ? error.message : '请求失败，请稍后重试。';
+const parseError = (error: unknown) => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    (error as { response?: { data?: { message?: string } } }).response?.data?.message
+  ) {
+    return (error as { response: { data: { message: string } } }).response.data.message;
+  }
+  return error instanceof Error ? error.message : '请求失败，请稍后重试。';
+};
 
 const normalizeBanner = (item: any): HomeBanner => ({
   id: String(item.id ?? ''),
@@ -171,7 +180,12 @@ export default function HomeConfigPage() {
           getLatestConfig(),
           getHomeCourses(),
           getMembershipCtaConfig(),
-          getGrowthArticles({ page: 1, pageSize: 100 }),
+          getGrowthArticles({ page: 1, pageSize: 100 }).catch(() => ({
+            list: [] as Article[],
+            total: 0,
+            page: 1,
+            pageSize: 100,
+          })),
         ]);
 
       setBanners((bannerRes || []).map(normalizeBanner).sort((a, b) => a.order - b.order));
