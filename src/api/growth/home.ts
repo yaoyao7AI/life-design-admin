@@ -140,12 +140,23 @@ const fromBackendCourse = (raw: Record<string, any>): HomeCourse => ({
 
 const fromBackendSectionPopular = (raw: Record<string, any> | null): MostPopularConfig => {
   if (!raw) return { ...DEFAULT_POPULAR };
+
+  let articleIds: string[] = [];
+  if (Array.isArray(raw.articleIds ?? raw.article_ids)) {
+    articleIds = (raw.articleIds ?? raw.article_ids).map(String);
+  } else if (typeof raw.subtitle === 'string' && raw.subtitle.trim().startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw.subtitle);
+      if (Array.isArray(parsed)) articleIds = parsed.map(String);
+    } catch {
+      articleIds = [];
+    }
+  }
+
   return {
     enabled: String(raw.status ?? 'active').toLowerCase() !== 'inactive',
     limit: Number(raw.article_limit ?? raw.limit ?? DEFAULT_POPULAR.limit),
-    articleIds: Array.isArray(raw.articleIds ?? raw.article_ids)
-      ? (raw.articleIds ?? raw.article_ids).map(String)
-      : [],
+    articleIds,
   };
 };
 
@@ -237,10 +248,12 @@ export const getMostPopularConfig = async (): Promise<MostPopularConfig> => {
 export const updateMostPopularConfig = async (
   data: MostPopularConfig
 ): Promise<MostPopularConfig> => {
+  // article_ids 为正式字段；subtitle 兼容尚未升级的后端，确保文章列表可回读
   const response = await axios.put(`${API_BASE_URL}/most-popular`, {
     title: 'Most Popular',
     article_limit: data.limit,
     article_ids: data.articleIds,
+    subtitle: JSON.stringify(data.articleIds ?? []),
     status: data.enabled ? 'active' : 'inactive',
   });
   return fromBackendSectionPopular(unwrapData(response.data));
