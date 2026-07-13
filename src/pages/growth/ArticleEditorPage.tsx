@@ -40,7 +40,7 @@ import {
 import { generateSlug } from '../../utils/slug';
 import './editor.css';
 
-const USER_SITE = 'https://designyourlife.app';
+const USER_SITE = (import.meta.env.VITE_USER_SITE as string | undefined) || '';
 const parseError = (error: unknown) =>
   error instanceof Error ? error.message : '请求失败，请稍后重试。';
 
@@ -244,7 +244,14 @@ export default function ArticleEditorPage() {
   };
 
   const handlePreview = () => {
-    window.open(`${USER_SITE}/growth/${form.slug}`, '_blank');
+    const slug = form.slug.trim();
+    if (!slug) {
+      setActionError('请先填写标题或 slug 后再预览。');
+      return;
+    }
+    const inferredSite = window.location.origin.replace(/\/admin\/?$/, '');
+    const previewBase = USER_SITE || inferredSite;
+    window.open(`${previewBase}/growth/${slug}`, '_blank');
   };
 
   const statusBadge = useMemo(
@@ -340,7 +347,7 @@ export default function ArticleEditorPage() {
             onClick={saveDraft}
             disabled={saving || removing}
           >
-            保存草稿
+            {saving ? '保存中...' : '保存草稿'}
           </Button>
           <Button
             variant="primary"
@@ -348,7 +355,7 @@ export default function ArticleEditorPage() {
             disabled={saving || removing}
           >
             <Icon name="sparkles" size={16} />
-            发布
+            {saving ? '发布中...' : '发布'}
           </Button>
         </div>
       </div>

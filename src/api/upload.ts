@@ -17,10 +17,11 @@ const buildFormData = (files: File[]) => {
   return formData;
 };
 
-export const uploadImage = async (file: File): Promise<UploadAsset> => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const response = await axios.post<UploadAsset>(`${API_BASE_URL}/image`, formData, {
+const postMultipart = async <T>(
+  path: string,
+  formData: FormData
+): Promise<T> => {
+  const response = await axios.post<T>(path, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -28,18 +29,22 @@ export const uploadImage = async (file: File): Promise<UploadAsset> => {
   return response.data;
 };
 
-export const uploadImages = async (files: File[]): Promise<UploadAsset[]> => {
-  const response = await axios.post<UploadAsset[] | { list: UploadAsset[] }>(
-    `${API_BASE_URL}/images`,
-    buildFormData(files),
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
+export const uploadImage = async (file: File): Promise<UploadAsset> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const data = await postMultipart<UploadAsset | { data?: UploadAsset }>(
+    `${API_BASE_URL}/image`,
+    formData
   );
-  if (Array.isArray(response.data)) return response.data;
-  return response.data.list ?? [];
+  return 'data' in data && data.data ? data.data : (data as UploadAsset);
+};
+
+export const uploadImages = async (files: File[]): Promise<UploadAsset[]> => {
+  const data = await postMultipart<
+    UploadAsset[] | { list?: UploadAsset[]; data?: UploadAsset[] }
+  >(`${API_BASE_URL}/images`, buildFormData(files));
+  if (Array.isArray(data)) return data;
+  return data.list ?? data.data ?? [];
 };
 
 export const getUpload = async (id: string): Promise<UploadAsset> => {
