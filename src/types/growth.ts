@@ -8,8 +8,8 @@ export type AccessLevel = 'free' | 'vip';
 /** 发布状态：草稿 / 已发布 */
 export type ArticleStatus = 'draft' | 'published';
 
-/** 主题分类标识 */
-export type TopicSlug = 'wealth' | 'ai' | 'growth' | 'life-design';
+/** 主题分类标识（动态主题以 slug 为准） */
+export type TopicSlug = string;
 
 /* ---------- 正文 Block 结构 ---------- */
 
@@ -41,7 +41,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 export interface Topic {
   id: string;
   slug: TopicSlug;
-  name: string; // 财富 / AI / 成长 / 人生设计
+  name: string;
   order: number;
   articleCount: number;
   createdAt: string;
@@ -56,6 +56,7 @@ export interface Article {
   summary?: string;
   cover?: string; // 封面缩略图 URL
   topic: TopicSlug;
+  topicName?: string;
   access: AccessLevel;
   status: ArticleStatus;
   author: string;
@@ -68,14 +69,17 @@ export interface Article {
   content?: Block[]; // 正文内容块
 }
 
-/* ---------- 标签映射（UI 展示） ---------- */
+/* ---------- 标签映射（UI 展示，兼容旧数据） ---------- */
 
-export const TOPIC_LABELS: Record<TopicSlug, string> = {
+export const TOPIC_LABELS: Record<string, string> = {
   wealth: '财富',
   ai: 'AI',
   growth: '成长',
   'life-design': '人生设计',
 };
+
+export const resolveTopicLabel = (slug: string, name?: string) =>
+  name?.trim() || TOPIC_LABELS[slug] || slug || '未分类';
 
 export const ACCESS_LABELS: Record<AccessLevel, string> = {
   free: '免费',
@@ -100,9 +104,11 @@ export const STATUS_TONE: Record<ArticleStatus, 'neutral' | 'success'> = {
 
 /* ---------- 下拉选项 ---------- */
 
-export const TOPIC_OPTIONS = (Object.keys(TOPIC_LABELS) as TopicSlug[]).map(
-  (slug) => ({ value: slug, label: TOPIC_LABELS[slug] })
-);
+/** 仅作无主题数据时的兜底；正常应使用 getGrowthTopics 动态选项 */
+export const TOPIC_OPTIONS = Object.keys(TOPIC_LABELS).map((slug) => ({
+  value: slug,
+  label: TOPIC_LABELS[slug],
+}));
 
 export const ACCESS_OPTIONS = (Object.keys(ACCESS_LABELS) as AccessLevel[]).map(
   (value) => ({ value, label: ACCESS_LABELS[value] })

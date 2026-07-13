@@ -25,6 +25,7 @@ import {
   updateGrowthArticle,
   type ArticleInput,
 } from '../../api/growth/articles';
+import { getGrowthTopics, type GrowthTopic } from '../../api/growth/topics';
 import { getMembershipPlans } from '../../api/growth/membership';
 import {
   ACCESS_LABELS,
@@ -71,12 +72,12 @@ interface FormState {
 
 const uid = () => `b-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-const initialForm = (): FormState => ({
+const initialForm = (defaultTopic = ''): FormState => ({
   title: '',
   titleEn: '',
   slug: '',
   summary: '',
-  topic: 'growth',
+  topic: defaultTopic,
   access: 'free',
   status: 'draft',
   cover: '',
@@ -112,30 +113,60 @@ export default function ArticleEditorPage() {
   const [notFound, setNotFound] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [accessOptions, setAccessOptions] = useState(DEFAULT_ACCESS_OPTIONS);
+  const [topics, setTopics] = useState<GrowthTopic[]>([]);
+  const [topicsLoading, setTopicsLoading] = useState(true);
+
+  const topicOptions = useMemo(() => {
+    if (topics.length > 0) {
+      return topics.map((topic) => ({ value: topic.slug, label: topic.name }));
+    }
+    return TOPIC_OPTIONS;
+  }, [topics]);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const plans = await getMembershipPlans();
-        if (!alive) return;
-        const vipPlan =
-          plans.find((plan) => plan.level === 'vip') ??
-          plans.find((plan) => plan.level?.toLowerCase?.() === 'vip');
-        const vipLabel = vipPlan?.name?.trim() || ACCESS_LABELS.vip;
-        setAccessOptions([
-          { value: 'free', label: ACCESS_LABELS.free },
-          { value: 'vip', label: vipLabel },
+        const [plans, topicList] = await Promise.all([
+          getMembershipPlans().catch(() => null),
+          getGrowthTopics(),
         ]);
+        if (!alive) return;
+
+        if (plans) {
+          const vipPlan =
+            plans.find((plan) => plan.level === 'vip') ??
+            plans.find((plan) => plan.level?.toLowerCase?.() === 'vip');
+          const vipLabel = vipPlan?.name?.trim() || ACCESS_LABELS.vip;
+          setAccessOptions([
+            { value: 'free', label: ACCESS_LABELS.free },
+            { value: 'vip', label: vipLabel },
+          ]);
+        } else {
+          setAccessOptions(DEFAULT_ACCESS_OPTIONS);
+        }
+
+        const sorted = [...topicList].sort((a, b) => a.order - b.order);
+        setTopics(sorted);
+        if (!isEdit) {
+          setForm((prev) =>
+            prev.topic
+              ? prev
+              : { ...prev, topic: sorted[0]?.slug ?? '' }
+          );
+        }
       } catch {
         if (!alive) return;
         setAccessOptions(DEFAULT_ACCESS_OPTIONS);
+        setTopics([]);
+      } finally {
+        if (alive) setTopicsLoading(false);
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [isEdit]);
 
   const loadArticle = useCallback(async () => {
     if (!id) return;
@@ -194,6 +225,10 @@ export default function ArticleEditorPage() {
       setActionError('请填写文章标题');
       return;
     }
+    if (!form.topic) {
+      setActionError('请选择主题分类');
+      return;
+    }
     setSaving(true);
     setActionError(null);
     try {
@@ -216,10 +251,15 @@ export default function ArticleEditorPage() {
       setActionError('请填写文章标题');
       return;
     }
+    if (!form.topic) {
+      setActionError('请选择主题分类');
+      return;
+    }
     setSaving(true);
     setActionError(null);
     try {
       if (isEdit && id) {
+        await updateGrowthArticle(id, buildInput('published'));
         await publishGrowthArticle(id, {
           publishedAt: form.publishedAt || null,
         });
@@ -479,11 +519,21 @@ export default function ArticleEditorPage() {
             <CardHeader title="分类与权限" />
             <CardBody>
               <div style={stackStyle}>
-                <FormField label="主题">
+                <FormField
+                  label="主题"
+                  hint={
+                    topicsLoading
+                      ? '主题加载中…'
+                      : topics.length === 0
+                        ? '请先在「主题管理」中创建主题'
+                        : undefined
+                  }
+                >
                   <Select
-                    options={TOPIC_OPTIONS}
+                    options={topicOptions}
                     value={form.topic}
                     onChange={(e) => set('topic', e.target.value as TopicSlug)}
+                    disabled={topicsLoading || topicOptions.length === 0}
                   />
                 </FormField>
                 <FormField

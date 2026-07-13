@@ -63,6 +63,13 @@ const unwrapTopicItems = (raw: unknown): BackendTopic[] => {
   return [];
 };
 
+const unwrapTopic = (raw: unknown): GrowthTopic => {
+  if (raw && typeof raw === 'object' && 'data' in (raw as object)) {
+    return fromBackendTopic((raw as { data: BackendTopic }).data);
+  }
+  return fromBackendTopic((raw as BackendTopic) ?? {});
+};
+
 const withTopicsFallback = async <T>(request: (base: string) => Promise<T>): Promise<T> => {
   try {
     return await request(API_BASE_URL);
@@ -87,24 +94,43 @@ export const getGrowthTopics = async (): Promise<GrowthTopic[]> => {
 export const createGrowthTopic = async (
   data: CreateGrowthTopicData
 ): Promise<GrowthTopic> => {
-  const response = await axios.post<GrowthTopic>(API_BASE_URL, data);
-  return response.data;
+  const response = await withTopicsFallback((base) =>
+    axios.post(base, {
+      name: data.name,
+      sort_order: data.order ?? 0,
+      status: 'active',
+    })
+  );
+  return unwrapTopic(response.data);
 };
 
 export const updateGrowthTopic = async (
   id: string,
   data: UpdateGrowthTopicData
 ): Promise<GrowthTopic> => {
-  const response = await axios.put<GrowthTopic>(`${API_BASE_URL}/${id}`, data);
-  return response.data;
+  const response = await withTopicsFallback((base) =>
+    axios.put(`${base}/${id}`, {
+      name: data.name,
+      sort_order: data.order,
+      status: 'active',
+    })
+  );
+  return unwrapTopic(response.data);
 };
 
 export const deleteGrowthTopic = async (id: string): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/${id}`);
+  await withTopicsFallback((base) => axios.delete(`${base}/${id}`));
 };
 
 export const sortGrowthTopics = async (
   payload: SortGrowthTopicsPayload
 ): Promise<void> => {
-  await axios.patch(`${API_BASE_URL}/sort`, payload);
+  await withTopicsFallback((base) =>
+    axios.patch(`${base}/sort`, {
+      items: payload.topics.map((item) => ({
+        id: Number(item.id),
+        sort_order: item.order,
+      })),
+    })
+  );
 };

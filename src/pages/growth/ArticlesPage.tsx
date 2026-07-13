@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import {
@@ -16,6 +16,7 @@ import {
   getGrowthArticles,
   type ArticleQuery,
 } from '../../api/growth/articles';
+import { getGrowthTopics, type GrowthTopic } from '../../api/growth/topics';
 import {
   ACCESS_LABELS,
   ACCESS_OPTIONS,
@@ -23,8 +24,8 @@ import {
   STATUS_LABELS,
   STATUS_OPTIONS,
   STATUS_TONE,
-  TOPIC_LABELS,
   TOPIC_OPTIONS,
+  resolveTopicLabel,
   type AccessLevel,
   type Article,
   type ArticleStatus,
@@ -61,6 +62,31 @@ export default function ArticlesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [topics, setTopics] = useState<GrowthTopic[]>([]);
+
+  const topicOptions = useMemo(() => {
+    if (topics.length > 0) {
+      return topics.map((topic) => ({ value: topic.slug, label: topic.name }));
+    }
+    return TOPIC_OPTIONS;
+  }, [topics]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const list = await getGrowthTopics();
+        if (!alive) return;
+        setTopics([...list].sort((a, b) => a.order - b.order));
+      } catch {
+        if (!alive) return;
+        setTopics([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const load = useCallback(async (query: ArticleQuery) => {
     setLoading(true);
@@ -147,7 +173,9 @@ export default function ArticlesPage() {
       key: 'topic',
       header: '主题',
       width: '110px',
-      render: (a) => <span className="topic-chip">{TOPIC_LABELS[a.topic]}</span>,
+      render: (a) => (
+        <span className="topic-chip">{resolveTopicLabel(a.topic, a.topicName)}</span>
+      ),
     },
     {
       key: 'access',
@@ -248,7 +276,7 @@ export default function ArticlesPage() {
         <Select
           className="filter-bar__select"
           placeholder="全部主题"
-          options={TOPIC_OPTIONS}
+          options={topicOptions}
           value={filters.topic}
           onChange={(e) => updateFilter('topic', e.target.value as TopicSlug | '')}
         />

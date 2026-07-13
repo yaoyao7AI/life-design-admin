@@ -61,13 +61,6 @@ const withArticlesFallback = async <T>(
   }
 };
 
-const VALID_TOPICS: TopicSlug[] = ['wealth', 'ai', 'growth', 'life-design'];
-
-const normalizeTopic = (value: unknown): TopicSlug => {
-  const v = String(value ?? '').trim();
-  return VALID_TOPICS.includes(v as TopicSlug) ? (v as TopicSlug) : 'growth';
-};
-
 const normalizeStatus = (value: unknown, visibility?: unknown): ArticleStatus => {
   const status = String(value ?? '').toLowerCase();
   if (status === 'draft' || status === 'published') return status;
@@ -102,6 +95,16 @@ const toBlocks = (value: unknown): Block[] | undefined => {
 };
 
 let topicSlugToIdCache: Map<string, number> | null = null;
+let topicIdToSlugCache: Map<number, string> | null = null;
+let topicIdToNameCache: Map<number, string> | null = null;
+let topicSlugToNameCache: Map<string, string> | null = null;
+
+export const invalidateTopicCaches = () => {
+  topicSlugToIdCache = null;
+  topicIdToSlugCache = null;
+  topicIdToNameCache = null;
+  topicSlugToNameCache = null;
+};
 
 const unwrapApiData = <T>(raw: unknown): T => {
   if (raw && typeof raw === 'object' && 'data' in (raw as object)) {
@@ -110,43 +113,83 @@ const unwrapApiData = <T>(raw: unknown): T => {
   return raw as T;
 };
 
-const loadTopicSlugToIdMap = async (): Promise<Map<string, number>> => {
-  if (topicSlugToIdCache) return topicSlugToIdCache;
+const ensureTopicCaches = async () => {
+  if (topicSlugToIdCache && topicIdToSlugCache) return;
   const topics = await getGrowthTopics();
-  topicSlugToIdCache = new Map(
-    topics
-      .map((topic) => [topic.slug, Number(topic.id)] as const)
-      .filter(([, id]) => Number.isFinite(id) && id > 0)
-  );
-  return topicSlugToIdCache;
+  topicSlugToIdCache = new Map();
+  topicIdToSlugCache = new Map();
+  topicIdToNameCache = new Map();
+  topicSlugToNameCache = new Map();
+  for (const topic of topics) {
+    const id = Number(topic.id);
+    if (!Number.isFinite(id) || id <= 0 || !topic.slug) continue;
+    topicSlugToIdCache.set(topic.slug, id);
+    topicIdToSlugCache.set(id, topic.slug);
+    topicIdToNameCache.set(id, topic.name);
+    topicSlugToNameCache.set(topic.slug, topic.name);
+  }
 };
 
 const resolveTopicId = async (slug: TopicSlug): Promise<number | null> => {
-  const map = await loadTopicSlugToIdMap();
-  const id = map.get(slug);
+  if (!slug) return null;
+  await ensureTopicCaches();
+  const id = topicSlugToIdCache?.get(slug);
   return id && id > 0 ? id : null;
 };
 
-const fromBackendArticle = (raw: BackendArticle): Article => ({
-  id: String(raw.id ?? raw.article_id ?? ''),
-  slug: String(raw.slug ?? ''),
-  title: String(raw.title ?? ''),
-  titleEn: raw.titleEn ?? raw.title_en ?? undefined,
-  subtitle: raw.subtitle ?? undefined,
-  summary: raw.summary ?? undefined,
-  cover: raw.cover ?? raw.cover_url ?? undefined,
-  topic: normalizeTopic(raw.topic ?? raw.topic_slug ?? raw.topic_id),
-  access: normalizeAccess(raw.access ?? raw.membership_tier),
-  status: normalizeStatus(raw.status, raw.visibility),
-  author: String(raw.author ?? raw.author_name ?? raw.author_id ?? '未署名'),
-  tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
-  readingTime: toNum(raw.readingTime ?? raw.reading_time_minutes, 1),
-  views: toNum(raw.views),
-  likes: toNum(raw.likes),
-  publishedAt: raw.publishedAt ?? raw.published_at ?? null,
-  updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
-  content: toBlocks(raw.content),
-});
+const resolveTopicFromRaw = async (
+  raw: BackendArticle
+): Promise<{ topic: TopicSlug; topicName?: string }> => {
+  await ensureTopicCaches();
+
+  const topicName =
+    (typeof raw.topic_name === 'string' && raw.topic_name.trim()) ||
+    (typeof raw.topicName === 'string' && raw.topicName.trim()) ||
+    undefined;
+
+  const slugCandidate = String(raw.topic_slug ?? raw.topic ?? '').trim();
+  if (slugCandidate && Number.isNaN(Number(slugCandidate))) {
+    return {
+      topic: slugCandidate,
+      topicName: topicName || topicSlugToNameCache?.get(slugCandidate),
+    };
+  }
+
+  const topicId = toNum(raw.topic_id ?? raw.topic, 0);
+  if (topicId > 0) {
+    return {
+      topic: topicIdToSlugCache?.get(topicId) ?? String(topicId),
+      topicName: topicName || topicIdToNameCache?.get(topicId),
+    };
+  }
+
+  return { topic: '', topicName };
+};
+
+const fromBackendArticle = async (raw: BackendArticle): Promise<Article> => {
+  const { topic, topicName } = await resolveTopicFromRaw(raw);
+  return {
+    id: String(raw.id ?? raw.article_id ?? ''),
+    slug: String(raw.slug ?? ''),
+    title: String(raw.title ?? ''),
+    titleEn: raw.titleEn ?? raw.title_en ?? undefined,
+    subtitle: raw.subtitle ?? undefined,
+    summary: raw.summary ?? undefined,
+    cover: raw.cover ?? raw.cover_url ?? undefined,
+    topic,
+    topicName,
+    access: normalizeAccess(raw.access ?? raw.membership_tier),
+    status: normalizeStatus(raw.status, raw.visibility),
+    author: String(raw.author ?? raw.author_name ?? raw.author_id ?? '未署名'),
+    tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
+    readingTime: toNum(raw.readingTime ?? raw.reading_time_minutes, 1),
+    views: toNum(raw.views),
+    likes: toNum(raw.likes),
+    publishedAt: raw.publishedAt ?? raw.published_at ?? null,
+    updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
+    content: toBlocks(raw.content),
+  };
+};
 
 const toBackendPayload = async (data: ArticleInput) => {
   const membershipTier = data.access === 'vip' ? 'founder' : 'free';
@@ -172,7 +215,7 @@ const toBackendPayload = async (data: ArticleInput) => {
   };
 };
 
-const normalizePaginated = (raw: any): Paginated<Article> => {
+const normalizePaginated = async (raw: any): Promise<Paginated<Article>> => {
   const payload = unwrapApiData<any>(raw);
   const listSource =
     payload?.items ??
@@ -187,7 +230,9 @@ const normalizePaginated = (raw: any): Paginated<Article> => {
     raw?.data ??
     [];
   const pagination = payload?.pagination ?? raw?.pagination ?? payload?.data?.pagination;
-  const list = Array.isArray(listSource) ? listSource.map(fromBackendArticle) : [];
+  const list = Array.isArray(listSource)
+    ? await Promise.all(listSource.map((item) => fromBackendArticle(item)))
+    : [];
   const total = toNum(
     pagination?.total ?? payload?.total ?? raw?.total ?? raw?.count ?? payload?.count,
     list.length

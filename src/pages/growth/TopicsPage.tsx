@@ -9,6 +9,7 @@ import {
   updateGrowthTopic,
   type GrowthTopic,
 } from '../../api/growth/topics';
+import { invalidateTopicCaches } from '../../api/growth/articles';
 import './growth.css';
 
 interface TopicForm {
@@ -83,6 +84,7 @@ export default function TopicsPage() {
 
     try {
       await sortGrowthTopics(normalizeSortPayload(withOrder));
+      invalidateTopicCaches();
       setTopics(sortByOrder(withOrder));
     } catch (err) {
       setTopics(prev);
@@ -112,6 +114,7 @@ export default function TopicsPage() {
     setError(null);
     try {
       await deleteGrowthTopic(topic.id);
+      invalidateTopicCaches();
       setTopics((prev) => prev.filter((item) => item.id !== topic.id));
       if (editingId === topic.id) {
         resetForm();
@@ -139,6 +142,7 @@ export default function TopicsPage() {
       } else {
         await createGrowthTopic(payload);
       }
+      invalidateTopicCaches();
       resetForm();
       await loadTopics();
     } catch (err) {
