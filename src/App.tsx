@@ -15,7 +15,7 @@ import './App.css';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/admin">
       <div className="app">
         <Routes>
           {/* 后台主框架（成长管理 CMS） */}
