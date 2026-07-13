@@ -8,7 +8,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    base: '/admin/',  // 部署到 /admin 路径
+    // 默认 /admin/ 供后端子路径部署；Vercel 独立域名在 vercel.json 中设为 /
+    base: env.VITE_BASE_PATH || '/admin/',
     server: {
       port: 5175,  // 使用不同的端口，避免与用户前端冲突
       proxy: {

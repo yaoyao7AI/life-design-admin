@@ -13,9 +13,11 @@ import EditAffirmation from './pages/EditAffirmation';
 import PlayAffirmation from './pages/PlayAffirmation';
 import './App.css';
 
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined;
+
 function App() {
   return (
-    <BrowserRouter basename="/admin">
+    <BrowserRouter basename={routerBasename}>
       <div className="app">
         <Routes>
           {/* 后台主框架（成长管理 CMS） */}

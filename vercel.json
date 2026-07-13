@@ -1,12 +1,17 @@
 {
+  "build": {
+    "env": {
+      "VITE_BASE_PATH": "/"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "http://123.56.17.118:3880/api/:path*"
     },
     {
-      "source": "/admin/:path*",
-      "destination": "/admin/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
