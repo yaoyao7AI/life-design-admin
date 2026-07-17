@@ -1,4 +1,4 @@
-import axios from 'axios';
+import request from '../request';
 
 const API_BASE_URL = '/api/growth/cms/topics';
 const FALLBACK_API_BASE_URL = '/api/growth/topics';
@@ -70,9 +70,11 @@ const unwrapTopic = (raw: unknown): GrowthTopic => {
   return fromBackendTopic((raw as BackendTopic) ?? {});
 };
 
-const withTopicsFallback = async <T>(request: (base: string) => Promise<T>): Promise<T> => {
+const withTopicsFallback = async <T>(
+  doRequest: (base: string) => Promise<T>
+): Promise<T> => {
   try {
-    return await request(API_BASE_URL);
+    return await doRequest(API_BASE_URL);
   } catch (error) {
     if (
       typeof error === 'object' &&
@@ -80,14 +82,14 @@ const withTopicsFallback = async <T>(request: (base: string) => Promise<T>): Pro
       'response' in error &&
       (error as { response?: { status?: number } }).response?.status === 404
     ) {
-      return request(FALLBACK_API_BASE_URL);
+      return doRequest(FALLBACK_API_BASE_URL);
     }
     throw error;
   }
 };
 
 export const getGrowthTopics = async (): Promise<GrowthTopic[]> => {
-  const response = await withTopicsFallback((base) => axios.get(base));
+  const response = await withTopicsFallback((base) => request.get(base));
   return unwrapTopicItems(response.data).map(fromBackendTopic);
 };
 
@@ -95,7 +97,7 @@ export const createGrowthTopic = async (
   data: CreateGrowthTopicData
 ): Promise<GrowthTopic> => {
   const response = await withTopicsFallback((base) =>
-    axios.post(base, {
+    request.post(base, {
       name: data.name,
       slug: data.slug,
       sort_order: data.order ?? 0,
@@ -110,7 +112,7 @@ export const updateGrowthTopic = async (
   data: UpdateGrowthTopicData
 ): Promise<GrowthTopic> => {
   const response = await withTopicsFallback((base) =>
-    axios.put(`${base}/${id}`, {
+    request.put(`${base}/${id}`, {
       name: data.name,
       slug: data.slug,
       sort_order: data.order,
@@ -121,14 +123,14 @@ export const updateGrowthTopic = async (
 };
 
 export const deleteGrowthTopic = async (id: string): Promise<void> => {
-  await withTopicsFallback((base) => axios.delete(`${base}/${id}`));
+  await withTopicsFallback((base) => request.delete(`${base}/${id}`));
 };
 
 export const sortGrowthTopics = async (
   payload: SortGrowthTopicsPayload
 ): Promise<void> => {
   await withTopicsFallback((base) =>
-    axios.patch(`${base}/sort`, {
+    request.patch(`${base}/sort`, {
       items: payload.topics.map((item) => ({
         id: Number(item.id),
         sort_order: item.order,

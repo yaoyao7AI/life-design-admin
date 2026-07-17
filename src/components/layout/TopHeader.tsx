@@ -1,7 +1,8 @@
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Icon from '../ui/Icon';
 import Breadcrumb from './Breadcrumb';
 import { findNavByPath } from '../../config/nav';
+import { useAuth } from '../../auth/useAuth';
 
 interface TopHeaderProps {
   onToggleSidebar: () => void;
@@ -10,12 +11,15 @@ interface TopHeaderProps {
 export default function TopHeader({ onToggleSidebar }: TopHeaderProps) {
   const { pathname } = useLocation();
   const nav = findNavByPath(pathname);
+  const { currentUser, logout } = useAuth();
 
   const crumbs = [
-    { label: '首页' },
+    { label: '控制台' },
     ...(nav?.groupLabel ? [{ label: nav.groupLabel }] : []),
     ...(nav ? [{ label: nav.label }] : []),
   ];
+
+  const letter = (currentUser?.name || '运').trim().charAt(0);
 
   return (
     <header className="admin-header">
@@ -33,14 +37,21 @@ export default function TopHeader({ onToggleSidebar }: TopHeaderProps) {
       <div className="admin-header__spacer" />
 
       <div className="admin-header__actions">
-        <button className="admin-header__icon-btn" aria-label="通知">
-          <Icon name="bell" size={18} />
+        <Link to="/console" className="admin-header__console-link">
+          控制台
+        </Link>
+        <button
+          type="button"
+          className="admin-header__text-btn"
+          onClick={() => void logout()}
+        >
+          退出
         </button>
-        <button className="admin-header__icon-btn" aria-label="设置">
-          <Icon name="settings" size={18} />
-        </button>
-        <div className="admin-header__avatar" title="运营">
-          运
+        <div
+          className="admin-header__avatar"
+          title={currentUser?.name || '运营'}
+        >
+          {letter}
         </div>
       </div>
     </header>

@@ -98,8 +98,8 @@ lsof -i :3000
 # 杀死进程
 kill -9 <PID>
 
-# 或修改端口
-# 在 .env 文件中设置 PORT=3001
+# life-design-backend 固定使用 3000；请停止占用进程
+# 3001 预留给 huodongxing-backend
 ```
 
 ---

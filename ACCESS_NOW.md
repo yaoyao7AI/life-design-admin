@@ -2,10 +2,18 @@
 
 ## ✅ 本地开发服务器已启动
 
+### 本地端口约定
+
+| 服务 | 端口 |
+|------|------|
+| life-design-backend | 3000 |
+| huodongxing-backend | 3001 |
+| life-design-admin | 5173 |
+
 ### 访问地址：
 
 ```
-http://localhost:5175/admin/
+http://localhost:5173/admin/
 ```
 
 ---
@@ -44,9 +52,9 @@ http://localhost:5175/admin/
 
 ## 🔗 相关链接
 
-- **后台管理首页：** `http://localhost:5175/admin/`
-- **新增肯定语：** `http://localhost:5175/admin/create`
-- **播放页面示例：** `http://localhost:5175/admin/play?a=001`
+- **后台管理首页：** `http://localhost:5173/admin/`
+- **新增肯定语：** `http://localhost:5173/admin/create`
+- **播放页面示例：** `http://localhost:5173/admin/play?a=001`
 
 ---
 
@@ -65,7 +73,7 @@ http://localhost:5175/admin/
 ```bash
 # 按 Ctrl+C 停止
 # 或查找进程并停止
-lsof -ti:5175 | xargs kill
+lsof -ti:5173 | xargs kill
 ```
 
 ---

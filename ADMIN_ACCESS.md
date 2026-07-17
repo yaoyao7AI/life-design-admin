@@ -5,12 +5,11 @@
 ### 访问地址：
 
 ```
-http://localhost:5175
+http://localhost:5173
 ```
 
 **端口说明：**
-- `5174` - 用户前端页面（已占用）
-- `5175` - 后台管理页面（当前项目）
+- `5173` - 后台管理页面（当前项目）
 
 ---
 
@@ -44,9 +43,9 @@ http://localhost:5175
 
 ## 🔗 相关链接
 
-- **后台管理首页：** `http://localhost:5175`
-- **新增肯定语：** `http://localhost:5175/create`
-- **编辑肯定语：** `http://localhost:5175/edit/:id`
+- **后台管理首页：** `http://localhost:5173/admin/`
+- **新增肯定语：** `http://localhost:5173/admin/create`
+- **编辑肯定语：** `http://localhost:5173/admin/edit/:id`
 
 ---
 
@@ -64,10 +63,10 @@ http://localhost:5175
 
 ```bash
 # 查找进程
-lsof -ti:5175
+lsof -ti:5173
 
 # 停止进程
-lsof -ti:5175 | xargs kill
+lsof -ti:5173 | xargs kill
 ```
 
 ---
@@ -84,4 +83,4 @@ http://123.56.17.118:3000/admin
 
 ---
 
-**现在可以访问 `http://localhost:5175` 使用后台管理功能了！** 🎉
+**现在可以访问 `http://localhost:5173/admin/` 使用后台管理功能了！** 🎉

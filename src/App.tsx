@@ -1,5 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AdminLayout from './components/layout/AdminLayout';
+import RequireAuth from './components/auth/RequireAuth';
+import PermissionRoute from './components/auth/PermissionRoute';
+import { PERMISSIONS } from './auth/permissions';
 import ArticlesPage from './pages/growth/ArticlesPage';
 import ArticleEditorPage from './pages/growth/ArticleEditorPage';
 import TopicsPage from './pages/growth/TopicsPage';
@@ -11,39 +14,144 @@ import AffirmationsList from './pages/AffirmationsList';
 import CreateAffirmation from './pages/CreateAffirmation';
 import EditAffirmation from './pages/EditAffirmation';
 import PlayAffirmation from './pages/PlayAffirmation';
+import LoginPage from './pages/Login/LoginPage';
+import ConsolePage from './pages/Console/ConsolePage';
+import EventsLayout from './pages/events/EventsLayout';
+import EventsHomePage from './pages/events/EventsHomePage';
+import EventsPlaceholderPage from './pages/events/EventsPlaceholderPage';
+import OrganizationsPage from './pages/events/OrganizationsPage';
+import { EventsAuthProvider } from './events-auth/EventsAuthContext';
 import './App.css';
+import './pages/Login/login.css';
 
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined;
+
+function ProtectedOutlet() {
+  return (
+    <RequireAuth>
+      <Outlet />
+    </RequireAuth>
+  );
+}
+
+function GrowthGuard() {
+  return (
+    <PermissionRoute permission={PERMISSIONS.GROWTH_ACCESS}>
+      <Outlet />
+    </PermissionRoute>
+  );
+}
+
+function EventsGuard() {
+  return (
+    <PermissionRoute permission={PERMISSIONS.EVENTS_ACCESS}>
+      <Outlet />
+    </PermissionRoute>
+  );
+}
 
 function App() {
   return (
     <BrowserRouter basename={routerBasename}>
       <div className="app">
         <Routes>
-          {/* 后台主框架（成长管理 CMS） */}
-          <Route element={<AdminLayout />}>
-            <Route index element={<Navigate to="/growth/articles" replace />} />
-            <Route path="/growth/articles" element={<ArticlesPage />} />
-            <Route path="/growth/articles/new" element={<ArticleEditorPage />} />
-            <Route
-              path="/growth/articles/:id/edit"
-              element={<ArticleEditorPage />}
-            />
-            <Route path="/growth/topics" element={<TopicsPage />} />
-            <Route path="/growth/home" element={<HomeConfigPage />} />
-            <Route path="/growth/courses" element={<CoursesPage />} />
-            <Route path="/growth/analytics" element={<AnalyticsPage />} />
-            <Route path="/growth/members" element={<MemberContentPage />} />
-            {/* 遗留模块：肯定语管理列表 */}
-            <Route path="/affirmations" element={<AffirmationsList />} />
+          <Route path="/login" element={<LoginPage />} />
+
+          <Route element={<ProtectedOutlet />}>
+            <Route path="/console" element={<ConsolePage />} />
+
+            {/* 成长运营中心 + 遗留成长后台页 */}
+            <Route element={<GrowthGuard />}>
+              <Route element={<AdminLayout />}>
+                <Route path="/growth/articles" element={<ArticlesPage />} />
+                <Route
+                  path="/growth/articles/new"
+                  element={<ArticleEditorPage />}
+                />
+                <Route
+                  path="/growth/articles/:id/edit"
+                  element={<ArticleEditorPage />}
+                />
+                <Route path="/growth/topics" element={<TopicsPage />} />
+                <Route path="/growth/home" element={<HomeConfigPage />} />
+                <Route path="/growth/courses" element={<CoursesPage />} />
+                <Route path="/growth/analytics" element={<AnalyticsPage />} />
+                <Route path="/growth/members" element={<MemberContentPage />} />
+                <Route path="/affirmations" element={<AffirmationsList />} />
+              </Route>
+              <Route path="/create" element={<CreateAffirmation />} />
+              <Route path="/edit/:id" element={<EditAffirmation />} />
+            </Route>
+
+            {/* 探索运营中心（内部平台运营） */}
+            <Route element={<EventsGuard />}>
+              <Route
+                path="/events"
+                element={
+                  <EventsAuthProvider>
+                    <EventsLayout />
+                  </EventsAuthProvider>
+                }
+              >
+                <Route index element={<EventsHomePage />} />
+                <Route path="organizations" element={<OrganizationsPage />} />
+                <Route
+                  path="activities"
+                  element={
+                    <EventsPlaceholderPage
+                      title="全部活动"
+                      description="查看与运营平台全部活动。"
+                    />
+                  }
+                />
+                <Route
+                  path="registrations"
+                  element={
+                    <EventsPlaceholderPage
+                      title="报名管理"
+                      description="查看与处理活动报名记录。"
+                    />
+                  }
+                />
+                <Route
+                  path="users"
+                  element={
+                    <EventsPlaceholderPage
+                      title="用户管理"
+                      description="活动用户与参与者管理。"
+                      comingSoon
+                    />
+                  }
+                />
+                <Route
+                  path="finance"
+                  element={
+                    <EventsPlaceholderPage
+                      title="财务中心"
+                      description="活动相关财务数据。"
+                      comingSoon
+                    />
+                  }
+                />
+                <Route
+                  path="reviews"
+                  element={
+                    <EventsPlaceholderPage
+                      title="审核管理"
+                      description="活动与内容审核。"
+                      comingSoon
+                    />
+                  }
+                />
+              </Route>
+            </Route>
           </Route>
 
-          {/* 遗留全屏页面 */}
-          <Route path="/create" element={<CreateAffirmation />} />
-          <Route path="/edit/:id" element={<EditAffirmation />} />
+          {/* 播放页保持公开（C 端短链场景） */}
           <Route path="/play" element={<PlayAffirmation />} />
 
-          <Route path="*" element={<Navigate to="/growth/articles" replace />} />
+          <Route path="/" element={<Navigate to="/console" replace />} />
+          <Route path="*" element={<Navigate to="/console" replace />} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import request from '../request';
 
 const API_BASE_URL = '/api/growth/cms/membership';
 
@@ -161,14 +161,14 @@ const fromBackendPlan = (raw: any): MembershipPlan => {
 };
 
 export const getMembershipPlans = async (): Promise<MembershipPlan[]> => {
-  const response = await axios.get(API_BASE_URL);
+  const response = await request.get(API_BASE_URL);
   return normalizeList<any>(response.data).map(fromBackendPlan);
 };
 
 export const createMembershipPlan = async (
   data: MembershipPlanInput
 ): Promise<MembershipPlan> => {
-  const response = await axios.post(API_BASE_URL, toCreatePayload(data));
+  const response = await request.post(API_BASE_URL, toCreatePayload(data));
   return fromBackendPlan(unwrap(response.data));
 };
 
@@ -176,21 +176,21 @@ export const updateMembershipPlan = async (
   id: string,
   data: MembershipPlanInput
 ): Promise<MembershipPlan> => {
-  const response = await axios.put(`${API_BASE_URL}/${id}`, toUpdatePayload(data));
+  const response = await request.put(`${API_BASE_URL}/${id}`, toUpdatePayload(data));
   return fromBackendPlan(unwrap(response.data));
 };
 
 export const getUserMemberships = async (
   params: UserMembershipQuery = {}
 ): Promise<UserMembership[]> => {
-  const response = await axios.get(`${API_BASE_URL}/user-membership`, { params });
+  const response = await request.get(`${API_BASE_URL}/user-membership`, { params });
   return normalizeList<UserMembership>(response.data);
 };
 
 export const createUserMembership = async (
   data: UserMembershipInput
 ): Promise<UserMembership> => {
-  const response = await axios.post(`${API_BASE_URL}/user-membership`, {
+  const response = await request.post(`${API_BASE_URL}/user-membership`, {
     user_id: data.userId,
     tier: levelToTier(data.membershipLevel),
     status: data.status === 'active' || !data.status ? 'active' : data.status,
@@ -204,7 +204,7 @@ export const updateUserMembership = async (
   id: string,
   data: UserMembershipInput
 ): Promise<UserMembership> => {
-  const response = await axios.put(`${API_BASE_URL}/user-membership/${id}`, {
+  const response = await request.put(`${API_BASE_URL}/user-membership/${id}`, {
     tier: levelToTier(data.membershipLevel),
     status: data.status,
     end_at: data.expiresAt ?? undefined,

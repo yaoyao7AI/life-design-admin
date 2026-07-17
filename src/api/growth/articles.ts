@@ -1,4 +1,4 @@
-import axios from 'axios';
+import request from '../request';
 import type { AccessLevel, Article, ArticleStatus, Block, TopicSlug } from '../../types/growth';
 import { getGrowthTopics } from './topics';
 
@@ -51,13 +51,13 @@ const isNotFound = (error: unknown) =>
   (error as any).response?.status === 404;
 
 const withArticlesFallback = async <T>(
-  request: (base: string) => Promise<T>
+  doRequest: (base: string) => Promise<T>
 ): Promise<T> => {
   try {
-    return await request(API_BASE_URL);
+    return await doRequest(API_BASE_URL);
   } catch (error) {
     if (!isNotFound(error)) throw error;
-    return request(FALLBACK_API_BASE_URL);
+    return doRequest(FALLBACK_API_BASE_URL);
   }
 };
 
@@ -280,18 +280,18 @@ export const getGrowthArticles = async (
     pageSize: params.pageSize,
     page_size: params.pageSize,
   };
-  const response = await withArticlesFallback((base) => axios.get(base, { params: query }));
+  const response = await withArticlesFallback((base) => request.get(base, { params: query }));
   return normalizePaginated(response.data);
 };
 
 export const getGrowthArticleById = async (id: string): Promise<Article> => {
-  const response = await withArticlesFallback((base) => axios.get(`${base}/${id}`));
+  const response = await withArticlesFallback((base) => request.get(`${base}/${id}`));
   return fromBackendArticle(unwrapApiData(response.data));
 };
 
 export const createGrowthArticle = async (data: ArticleInput): Promise<Article> => {
   const payload = await toBackendPayload(data);
-  const response = await withArticlesFallback((base) => axios.post(base, payload));
+  const response = await withArticlesFallback((base) => request.post(base, payload));
   return fromBackendArticle(unwrapApiData(response.data));
 };
 
@@ -301,13 +301,13 @@ export const updateGrowthArticle = async (
 ): Promise<Article> => {
   const payload = await toBackendPayload(data);
   const response = await withArticlesFallback((base) =>
-    axios.put(`${base}/${id}`, payload)
+    request.put(`${base}/${id}`, payload)
   );
   return fromBackendArticle(unwrapApiData(response.data));
 };
 
 export const deleteGrowthArticle = async (id: string): Promise<void> => {
-  await withArticlesFallback((base) => axios.delete(`${base}/${id}`));
+  await withArticlesFallback((base) => request.delete(`${base}/${id}`));
 };
 
 export const publishGrowthArticle = async (
@@ -321,7 +321,7 @@ export const publishGrowthArticle = async (
     visibility: 'public',
   };
   const response = await withArticlesFallback((base) =>
-    axios.patch(`${base}/${id}/publish`, payload)
+    request.patch(`${base}/${id}/publish`, payload)
   );
   return fromBackendArticle(unwrapApiData(response.data));
 };

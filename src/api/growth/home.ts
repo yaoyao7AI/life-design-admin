@@ -1,4 +1,4 @@
-import axios from 'axios';
+import request from '../request';
 
 const API_BASE_URL = '/api/growth/cms/home';
 
@@ -192,12 +192,12 @@ const unwrapItems = (raw: unknown): Record<string, any>[] => {
 };
 
 export const getHomeBanners = async (): Promise<HomeBanner[]> => {
-  const response = await axios.get(`${API_BASE_URL}/banners`);
+  const response = await request.get(`${API_BASE_URL}/banners`);
   return unwrapItems(response.data).map(fromBackendBanner);
 };
 
 export const createHomeBanner = async (data: BannerInput): Promise<HomeBanner> => {
-  const response = await axios.post(`${API_BASE_URL}/banners`, {
+  const response = await request.post(`${API_BASE_URL}/banners`, {
     title: data.title,
     image_url: data.imageUrl,
     link_url: encodeLink(data.targetType, data.targetValue),
@@ -212,7 +212,7 @@ export const updateHomeBanner = async (
   id: string,
   data: BannerInput
 ): Promise<HomeBanner> => {
-  const response = await axios.put(`${API_BASE_URL}/banners/${id}`, {
+  const response = await request.put(`${API_BASE_URL}/banners/${id}`, {
     title: data.title,
     image_url: data.imageUrl,
     link_url: encodeLink(data.targetType, data.targetValue),
@@ -224,20 +224,20 @@ export const updateHomeBanner = async (
 };
 
 export const deleteHomeBanner = async (id: string): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/banners/${id}`);
+  await request.delete(`${API_BASE_URL}/banners/${id}`);
 };
 
 export const sortHomeBanners = async (
   items: Array<{ id: string; order: number }>
 ): Promise<void> => {
-  await axios.patch(`${API_BASE_URL}/banners/sort`, {
+  await request.patch(`${API_BASE_URL}/banners/sort`, {
     items: items.map((item) => ({ id: Number(item.id), sort_order: item.order })),
   });
 };
 
 export const getMostPopularConfig = async (): Promise<MostPopularConfig> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/most-popular`);
+    const response = await request.get(`${API_BASE_URL}/most-popular`);
     return fromBackendSectionPopular(unwrapData(response.data));
   } catch (error) {
     if (isNotFound(error)) return { ...DEFAULT_POPULAR };
@@ -249,7 +249,7 @@ export const updateMostPopularConfig = async (
   data: MostPopularConfig
 ): Promise<MostPopularConfig> => {
   // article_ids 为正式字段；subtitle 兼容尚未升级的后端，确保文章列表可回读
-  const response = await axios.put(`${API_BASE_URL}/most-popular`, {
+  const response = await request.put(`${API_BASE_URL}/most-popular`, {
     title: 'Most Popular',
     article_limit: data.limit,
     article_ids: data.articleIds,
@@ -261,7 +261,7 @@ export const updateMostPopularConfig = async (
 
 export const getLatestConfig = async (): Promise<LatestConfig> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/latest`);
+    const response = await request.get(`${API_BASE_URL}/latest`);
     return fromBackendSectionLatest(unwrapData(response.data));
   } catch (error) {
     if (isNotFound(error)) return { ...DEFAULT_LATEST };
@@ -270,7 +270,7 @@ export const getLatestConfig = async (): Promise<LatestConfig> => {
 };
 
 export const updateLatestConfig = async (data: LatestConfig): Promise<LatestConfig> => {
-  const response = await axios.put(`${API_BASE_URL}/latest`, {
+  const response = await request.put(`${API_BASE_URL}/latest`, {
     title: 'Latest',
     article_limit: data.limit,
     subtitle: data.sortRule,
@@ -280,12 +280,12 @@ export const updateLatestConfig = async (data: LatestConfig): Promise<LatestConf
 };
 
 export const getHomeCourses = async (): Promise<HomeCourse[]> => {
-  const response = await axios.get(`${API_BASE_URL}/courses`);
+  const response = await request.get(`${API_BASE_URL}/courses`);
   return unwrapItems(response.data).map(fromBackendCourse);
 };
 
 export const createHomeCourse = async (data: CourseInput): Promise<HomeCourse> => {
-  const response = await axios.post(`${API_BASE_URL}/courses`, {
+  const response = await request.post(`${API_BASE_URL}/courses`, {
     title: data.title,
     cover_url: data.coverUrl,
     link_url: data.link,
@@ -300,7 +300,7 @@ export const updateHomeCourse = async (
   id: string,
   data: CourseInput
 ): Promise<HomeCourse> => {
-  const response = await axios.put(`${API_BASE_URL}/courses/${id}`, {
+  const response = await request.put(`${API_BASE_URL}/courses/${id}`, {
     title: data.title,
     cover_url: data.coverUrl,
     link_url: data.link,
@@ -311,20 +311,20 @@ export const updateHomeCourse = async (
 };
 
 export const deleteHomeCourse = async (id: string): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/courses/${id}`);
+  await request.delete(`${API_BASE_URL}/courses/${id}`);
 };
 
 export const sortHomeCourses = async (
   items: Array<{ id: string; order: number }>
 ): Promise<void> => {
-  await axios.patch(`${API_BASE_URL}/courses/sort`, {
+  await request.patch(`${API_BASE_URL}/courses/sort`, {
     items: items.map((item) => ({ id: Number(item.id), sort_order: item.order })),
   });
 };
 
 export const getMembershipCtaConfig = async (): Promise<MembershipCtaConfig> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/membership-cta`);
+    const response = await request.get(`${API_BASE_URL}/membership-cta`);
     return fromBackendCta(unwrapData(response.data));
   } catch (error) {
     if (isNotFound(error)) return { ...DEFAULT_CTA };
@@ -335,7 +335,7 @@ export const getMembershipCtaConfig = async (): Promise<MembershipCtaConfig> => 
 export const updateMembershipCtaConfig = async (
   data: MembershipCtaConfig
 ): Promise<MembershipCtaConfig> => {
-  const response = await axios.put(`${API_BASE_URL}/membership-cta`, {
+  const response = await request.put(`${API_BASE_URL}/membership-cta`, {
     title: data.title,
     subtitle: data.description,
     button_text: data.buttonText,

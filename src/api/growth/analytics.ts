@@ -1,4 +1,4 @@
-import axios from 'axios';
+import request from '../request';
 
 const API_BASE_URL = '/api/growth/cms/analytics';
 
@@ -59,12 +59,12 @@ export interface AnalyticsDashboardData {
 }
 
 export const getGrowthAnalyticsSummary = async (): Promise<AnalyticsSummary> => {
-  const response = await axios.get<AnalyticsSummary>(`${API_BASE_URL}/summary`);
+  const response = await request.get<AnalyticsSummary>(`${API_BASE_URL}/summary`);
   return response.data;
 };
 
 export const getGrowthAnalyticsTopArticles = async (): Promise<AnalyticsTopArticle[]> => {
-  const response = await axios.get<
+  const response = await request.get<
     AnalyticsTopArticle[] | { list?: AnalyticsTopArticle[] }
   >(`${API_BASE_URL}/top-articles`);
   return Array.isArray(response.data) ? response.data : response.data.list ?? [];
@@ -73,7 +73,7 @@ export const getGrowthAnalyticsTopArticles = async (): Promise<AnalyticsTopArtic
 export const getGrowthAnalyticsTrends = async (
   days = 7
 ): Promise<AnalyticsTrendPoint[]> => {
-  const response = await axios.get<
+  const response = await request.get<
     AnalyticsTrendPoint[] | { list?: AnalyticsTrendPoint[] }
   >(`${API_BASE_URL}/trends`, {
     params: { days },

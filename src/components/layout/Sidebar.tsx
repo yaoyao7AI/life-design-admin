@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import Icon from '../ui/Icon';
 import { navGroups, standaloneNav } from '../../config/nav';
 
@@ -108,6 +108,12 @@ export default function Sidebar({ open, onNavigate }: SidebarProps) {
           </div>
         )}
       </nav>
+
+      <div className="admin-sidebar__footer">
+        <Link to="/console" className="admin-sidebar__back" onClick={onNavigate}>
+          ← 返回控制台
+        </Link>
+      </div>
     </aside>
   );
 }
