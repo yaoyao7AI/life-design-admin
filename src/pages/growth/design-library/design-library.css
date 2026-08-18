@@ -1,0 +1,87 @@
+/* 人生设计库页面补充样式（复用 growth.css / editor.css） */
+
+.dl-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  background: var(--color-muted);
+  flex-shrink: 0;
+}
+.dl-cover--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+}
+
+.dl-tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dl-tag-chip {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.dl-tag-chip:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+.dl-tag-chip--active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.dl-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.dl-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.dl-step__index {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-muted);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.dl-step__input {
+  flex: 1;
+  min-width: 0;
+}
+.dl-step__ops {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dl-sort-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.dl-sort-header:hover {
+  color: var(--color-text);
+}

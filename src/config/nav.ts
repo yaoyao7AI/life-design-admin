@@ -51,6 +51,44 @@ export const navGroups: NavGroup[] = [
       },
     ],
   },
+  {
+    key: 'design-library',
+    label: '人生设计库',
+    icon: 'book-open',
+    children: [
+      {
+        key: 'dl-categories',
+        label: '分类管理',
+        path: '/growth/design-library/categories',
+        icon: 'layers',
+      },
+      {
+        key: 'dl-templates',
+        label: '模板管理',
+        path: '/growth/design-library/templates',
+        icon: 'file-text',
+      },
+      {
+        key: 'dl-collections',
+        label: '专题合集',
+        path: '/growth/design-library/collections',
+        icon: 'inbox',
+        placeholder: true,
+      },
+      {
+        key: 'dl-tags',
+        label: '标签管理',
+        path: '/growth/design-library/tags',
+        icon: 'sparkles',
+      },
+      {
+        key: 'dl-analytics',
+        label: '数据统计',
+        path: '/growth/design-library/analytics',
+        icon: 'bar-chart',
+      },
+    ],
+  },
 ];
 
 /** 独立于分组之外的其他模块（如遗留的肯定语后台）。 */
@@ -71,5 +109,8 @@ export const flatNav: FlatNav[] = [
 ];
 
 export function findNavByPath(pathname: string): FlatNav | undefined {
-  return flatNav.find((n) => pathname.startsWith(n.path));
+  const matches = flatNav.filter(
+    (n) => pathname === n.path || pathname.startsWith(`${n.path}/`)
+  );
+  return matches.sort((a, b) => b.path.length - a.path.length)[0];
 }

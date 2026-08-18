@@ -50,7 +50,7 @@ export default function ConsolePage() {
             {showGrowth && (
               <WorkspaceCard
                 title="成长运营中心"
-                description="管理文章、主题、首页配置、课程、会员内容与肯定语。"
+                description="管理文章、人生设计库、主题、首页配置、课程、会员内容与肯定语。"
                 icon="sparkles"
                 href="/growth/articles"
               />

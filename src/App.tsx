@@ -10,6 +10,12 @@ import HomeConfigPage from './pages/growth/HomeConfigPage';
 import CoursesPage from './pages/growth/CoursesPage';
 import AnalyticsPage from './pages/growth/AnalyticsPage';
 import MemberContentPage from './pages/growth/MemberContentPage';
+import DesignLibraryCategoriesPage from './pages/growth/design-library/CategoriesPage';
+import DesignLibraryTemplatesPage from './pages/growth/design-library/TemplatesPage';
+import TemplateEditorPage from './pages/growth/design-library/TemplateEditorPage';
+import DesignLibraryTagsPage from './pages/growth/design-library/TagsPage';
+import DesignLibraryAnalyticsPage from './pages/growth/design-library/AnalyticsPage';
+import DesignLibraryCollectionsPage from './pages/growth/design-library/CollectionsPage';
 import AffirmationsList from './pages/AffirmationsList';
 import CreateAffirmation from './pages/CreateAffirmation';
 import EditAffirmation from './pages/EditAffirmation';
@@ -77,6 +83,38 @@ function App() {
                 <Route path="/growth/courses" element={<CoursesPage />} />
                 <Route path="/growth/analytics" element={<AnalyticsPage />} />
                 <Route path="/growth/members" element={<MemberContentPage />} />
+                <Route
+                  path="/growth/design-library"
+                  element={<Navigate to="/growth/design-library/templates" replace />}
+                />
+                <Route
+                  path="/growth/design-library/categories"
+                  element={<DesignLibraryCategoriesPage />}
+                />
+                <Route
+                  path="/growth/design-library/templates"
+                  element={<DesignLibraryTemplatesPage />}
+                />
+                <Route
+                  path="/growth/design-library/templates/new"
+                  element={<TemplateEditorPage />}
+                />
+                <Route
+                  path="/growth/design-library/templates/:id/edit"
+                  element={<TemplateEditorPage />}
+                />
+                <Route
+                  path="/growth/design-library/tags"
+                  element={<DesignLibraryTagsPage />}
+                />
+                <Route
+                  path="/growth/design-library/analytics"
+                  element={<DesignLibraryAnalyticsPage />}
+                />
+                <Route
+                  path="/growth/design-library/collections"
+                  element={<DesignLibraryCollectionsPage />}
+                />
                 <Route path="/affirmations" element={<AffirmationsList />} />
               </Route>
               <Route path="/create" element={<CreateAffirmation />} />

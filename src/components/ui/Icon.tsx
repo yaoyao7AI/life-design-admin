@@ -25,7 +25,8 @@ export type IconName =
   | 'inbox'
   | 'image'
   | 'settings'
-  | 'bell';
+  | 'bell'
+  | 'book-open';
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
   name: IconName;
@@ -119,6 +120,12 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </>
+  ),
+  'book-open': (
+    <>
+      <path d="M2 4h8a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z" />
+      <path d="M22 4h-8a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h9z" />
     </>
   ),
 };
