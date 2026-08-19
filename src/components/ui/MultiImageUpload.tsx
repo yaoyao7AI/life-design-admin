@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react';
 import Icon from './Icon';
-import { uploadImage } from '../../api/upload';
+import { MAX_IMAGE_BYTES, uploadImage } from '../../api/upload';
 
 const MAX_IMAGES = 15;
 const ACCEPT = 'image/png,image/jpeg,image/jpg';
@@ -71,7 +71,13 @@ export default function MultiImageUpload({
       setError('仅支持 PNG / JPG。');
       return;
     }
-    const picked = images.slice(0, remaining);
+    const oversized = images.filter((file) => file.size > MAX_IMAGE_BYTES);
+    const sized = images.filter((file) => file.size <= MAX_IMAGE_BYTES);
+    if (sized.length === 0) {
+      setError('图片体积过大，请压缩后单张上传（每张不超过 5MB）。');
+      return;
+    }
+    const picked = sized.slice(0, remaining);
     if (picked.length === 0) {
       setError(`最多上传 ${max} 张图片。`);
       return;
@@ -94,9 +100,10 @@ export default function MultiImageUpload({
       if (uploadedCount === 0) {
         throw new Error('上传成功但未返回图片地址。');
       }
-      if (images.length > picked.length) {
-        setError(`已达上限 ${max} 张，多余文件未上传。`);
-      }
+      const extras: string[] = [];
+      if (oversized.length) extras.push('有图片超过 5MB，已跳过');
+      if (sized.length > picked.length) extras.push(`已达上限 ${max} 张，多余文件未上传`);
+      if (extras.length) setError(`${extras.join('；')}。`);
     } catch (err) {
       setError(parseError(err));
     } finally {

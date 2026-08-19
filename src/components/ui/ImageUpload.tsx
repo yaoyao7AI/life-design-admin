@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import Icon from './Icon';
-import { deleteUpload, uploadImage, type UploadAsset } from '../../api/upload';
+import { assertImageFileSize, deleteUpload, uploadImage, type UploadAsset } from '../../api/upload';
 
 interface ImageUploadProps {
   value?: string;
@@ -43,6 +43,14 @@ export default function ImageUpload({ value, onChange }: ImageUploadProps) {
 
   const handleFile = async (file?: File) => {
     if (!file) return;
+    try {
+      assertImageFileSize(file);
+    } catch (err) {
+      setStatus('fail');
+      setError(parseError(err));
+      setRetryFile(null);
+      return;
+    }
     await doUpload(file);
   };
 

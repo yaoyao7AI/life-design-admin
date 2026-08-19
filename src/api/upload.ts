@@ -2,6 +2,13 @@ import axios from 'axios';
 import { getStoredToken } from '../auth/token';
 
 const API_BASE_URL = '/api/upload';
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+export function assertImageFileSize(file: File) {
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error('图片体积过大，请压缩后单张上传（每张不超过 5MB）。');
+  }
+}
 
 export interface UploadAsset {
   id: string;
@@ -47,6 +54,7 @@ const postMultipart = async <T>(
 };
 
 export const uploadImage = async (file: File): Promise<UploadAsset> => {
+  assertImageFileSize(file);
   const formData = new FormData();
   formData.append('file', file);
   const data = await postMultipart<UploadAsset | { data?: UploadAsset }>(
