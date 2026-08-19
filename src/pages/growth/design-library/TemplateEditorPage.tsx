@@ -203,14 +203,21 @@ export default function TemplateEditorPage() {
     setSaving(true);
     setActionError(null);
     try {
-      if (isEdit && id) {
-        await updateLibraryTemplate(id, payload);
-      } else {
-        const created = await createLibraryTemplate(payload);
-        navigate(`/growth/design-library/templates/${created.id}/edit`, { replace: true });
+      const saved = isEdit && id
+        ? await updateLibraryTemplate(id, payload)
+        : await createLibraryTemplate(payload);
+      if (payload.images.length > 0 && saved.images.length === 0) {
+        setActionError('内容图片未保存成功，请确认图片已上传完成后再保存。');
+        if (!isEdit) {
+          navigate(`/growth/design-library/templates/${saved.id}/edit`, { replace: true });
+        }
         return;
       }
-      navigate('/growth/design-library/templates');
+      if (isEdit) {
+        navigate('/growth/design-library/templates');
+        return;
+      }
+      navigate(`/growth/design-library/templates/${saved.id}/edit`, { replace: true });
     } catch (err) {
       setActionError(parseApiError(err));
     } finally {
@@ -349,7 +356,7 @@ export default function TemplateEditorPage() {
                 </FormField>
                 <FormField
                   label="内容图片上传（最多15张）"
-                  hint="最多上传 15 张图片，图片顺序将同步到用户端模板详情页。"
+                  hint="最多上传 15 张图片，图片顺序将同步到用户端模板详情页。可拖拽调整顺序。"
                 >
                   <MultiImageUpload
                     value={form.images}

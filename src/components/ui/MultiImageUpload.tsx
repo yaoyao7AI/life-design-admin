@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react';
 import Icon from './Icon';
-import { uploadImage, uploadImages } from '../../api/upload';
+import { uploadImage } from '../../api/upload';
 
 const MAX_IMAGES = 15;
 const ACCEPT = 'image/png,image/jpeg,image/jpg';
@@ -43,6 +43,8 @@ export default function MultiImageUpload({
   max = MAX_IMAGES,
 }: MultiImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
@@ -58,7 +60,9 @@ export default function MultiImageUpload({
 
   const appendUrls = (urls: string[]) => {
     if (urls.length === 0) return;
-    onChange([...value, ...urls].slice(0, max));
+    const next = [...valueRef.current, ...urls].slice(0, max);
+    valueRef.current = next;
+    onChange(next);
   };
 
   const uploadFiles = async (files: File[]) => {
@@ -75,28 +79,21 @@ export default function MultiImageUpload({
 
     setUploading(true);
     setError('');
-    setProgress(`正在上传 0/${picked.length}`);
-    const uploaded: string[] = [];
+    let uploadedCount = 0;
     try {
-      if (picked.length === 1) {
-        const asset = await uploadImage(picked[0]);
-        uploaded.push(...unwrapUploaded(asset));
-      } else {
-        try {
-          const assets = await uploadImages(picked);
-          uploaded.push(...unwrapUploaded(assets));
-        } catch {
-          for (let i = 0; i < picked.length; i += 1) {
-            setProgress(`正在上传 ${i + 1}/${picked.length}`);
-            const asset = await uploadImage(picked[i]);
-            uploaded.push(...unwrapUploaded(asset));
-          }
+      for (let i = 0; i < picked.length; i += 1) {
+        setProgress(`正在上传 ${i + 1}/${picked.length}`);
+        const asset = await uploadImage(picked[i]);
+        const urls = unwrapUploaded(asset);
+        if (urls.length === 0) {
+          throw new Error('上传成功但未返回图片地址。');
         }
+        appendUrls(urls);
+        uploadedCount += urls.length;
       }
-      if (uploaded.length === 0) {
+      if (uploadedCount === 0) {
         throw new Error('上传成功但未返回图片地址。');
       }
-      appendUrls(uploaded);
       if (images.length > picked.length) {
         setError(`已达上限 ${max} 张，多余文件未上传。`);
       }
@@ -206,9 +203,7 @@ export default function MultiImageUpload({
         }}
       />
 
-      <div className="ui-multi-upload__hint">
-        {progress || `最多上传 ${max} 张图片，图片顺序将同步到用户端模板详情页。可拖拽调整顺序。`}
-      </div>
+      {progress && <div className="ui-multi-upload__hint">{progress}</div>}
       {error && <div className="ui-multi-upload__error">{error}</div>}
 
       {preview && (

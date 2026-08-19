@@ -85,8 +85,7 @@ const fromTag = (raw: BackendRecord): LibraryTag => ({
   updatedAt: raw.updated_at == null && raw.updatedAt == null ? null : toStr(raw.updated_at ?? raw.updatedAt),
 });
 
-const parseImages = (raw: BackendRecord): string[] => {
-  const source = raw.content_images ?? raw.images ?? raw.content_images_json;
+const parseImageList = (source: unknown): string[] => {
   let values: unknown[] = [];
   if (Array.isArray(source)) {
     values = source;
@@ -123,12 +122,42 @@ const parseImages = (raw: BackendRecord): string[] => {
     .map((item) => item.url);
 };
 
-const toContentImages = (urls: string[]) =>
+const parseImages = (raw: BackendRecord): string[] => {
+  const primary = parseImageList(raw.content_images);
+  if (primary.length) return primary;
+  return parseImageList(raw.images ?? raw.content_images_json);
+};
+
+const toImageUrls = (urls: string[]) =>
   urls
     .map((url) => url.trim())
     .filter(Boolean)
-    .slice(0, 15)
-    .map((url, index) => ({ url, sort: index + 1 }));
+    .slice(0, 15);
+
+const toContentImages = (urls: string[]) =>
+  toImageUrls(urls).map((url, index) => ({ url, sort: index + 1 }));
+
+const toTemplateWriteBody = (data: TemplateInput) => {
+  const imageUrls = toImageUrls(data.images ?? []);
+  return {
+    category_id: Number(data.categoryId),
+    title: data.title,
+    subtitle: data.subtitle || null,
+    cover: data.cover || null,
+    cover_url: data.cover || null,
+    images: imageUrls,
+    content_images: toContentImages(imageUrls),
+    description: data.description || null,
+    content: data.content || null,
+    steps: data.steps,
+    duration: data.duration ?? null,
+    difficulty: data.difficulty || null,
+    tags: data.tags,
+    status: data.status,
+    is_recommend: data.isRecommend,
+    sort: data.sort,
+  };
+};
 
 const fromTemplate = (raw: BackendRecord): LibraryTemplate => {
   const category = (raw.category || {}) as BackendRecord;
@@ -297,22 +326,7 @@ export const getLibraryTemplate = async (id: string): Promise<LibraryTemplate> =
 };
 
 export const createLibraryTemplate = async (data: TemplateInput): Promise<LibraryTemplate> => {
-  const response = await request.post(`${CMS_BASE}/templates`, {
-    category_id: Number(data.categoryId),
-    title: data.title,
-    subtitle: data.subtitle || null,
-    cover_url: data.cover || null,
-    content_images: toContentImages(data.images ?? []),
-    description: data.description || null,
-    content: data.content || null,
-    steps: data.steps,
-    duration: data.duration ?? null,
-    difficulty: data.difficulty || null,
-    tags: data.tags,
-    status: data.status,
-    is_recommend: data.isRecommend,
-    sort: data.sort,
-  });
+  const response = await request.post(`${CMS_BASE}/templates`, toTemplateWriteBody(data));
   return fromTemplate(unwrap<BackendRecord>(response.data));
 };
 
@@ -320,22 +334,7 @@ export const updateLibraryTemplate = async (
   id: string,
   data: TemplateInput
 ): Promise<LibraryTemplate> => {
-  const response = await request.put(`${CMS_BASE}/templates/${id}`, {
-    category_id: Number(data.categoryId),
-    title: data.title,
-    subtitle: data.subtitle || null,
-    cover_url: data.cover || null,
-    content_images: toContentImages(data.images ?? []),
-    description: data.description || null,
-    content: data.content || null,
-    steps: data.steps,
-    duration: data.duration ?? null,
-    difficulty: data.difficulty || null,
-    tags: data.tags,
-    status: data.status,
-    is_recommend: data.isRecommend,
-    sort: data.sort,
-  });
+  const response = await request.put(`${CMS_BASE}/templates/${id}`, toTemplateWriteBody(data));
   return fromTemplate(unwrap<BackendRecord>(response.data));
 };
 
