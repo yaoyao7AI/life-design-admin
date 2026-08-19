@@ -95,7 +95,7 @@ export default function ImageUpload({ value, onChange }: ImageUploadProps) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/jpg"
           hidden
           onChange={(e) => void handleFile(e.target.files?.[0])}
         />
@@ -159,7 +159,7 @@ export default function ImageUpload({ value, onChange }: ImageUploadProps) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/png,image/jpeg,image/jpg"
         hidden
         onChange={(e) => void handleFile(e.target.files?.[0])}
       />

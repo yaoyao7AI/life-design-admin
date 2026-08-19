@@ -85,6 +85,51 @@ const fromTag = (raw: BackendRecord): LibraryTag => ({
   updatedAt: raw.updated_at == null && raw.updatedAt == null ? null : toStr(raw.updated_at ?? raw.updatedAt),
 });
 
+const parseImages = (raw: BackendRecord): string[] => {
+  const source = raw.content_images ?? raw.images ?? raw.content_images_json;
+  let values: unknown[] = [];
+  if (Array.isArray(source)) {
+    values = source;
+  } else if (typeof source === 'string' && source.trim()) {
+    try {
+      const parsed = JSON.parse(source);
+      values = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      values = [];
+    }
+  }
+
+  const items = values
+    .map((item, index) => {
+      if (typeof item === 'string') {
+        const url = item.trim();
+        return url ? { url, sort: index + 1 } : null;
+      }
+      if (item && typeof item === 'object' && 'url' in item) {
+        const url = String((item as { url?: unknown }).url ?? '').trim();
+        if (!url) return null;
+        const sortRaw = Number((item as { sort?: unknown }).sort);
+        return {
+          url,
+          sort: Number.isFinite(sortRaw) ? sortRaw : index + 1,
+        };
+      }
+      return null;
+    })
+    .filter((item): item is { url: string; sort: number } => Boolean(item));
+
+  return items
+    .sort((a, b) => a.sort - b.sort)
+    .map((item) => item.url);
+};
+
+const toContentImages = (urls: string[]) =>
+  urls
+    .map((url) => url.trim())
+    .filter(Boolean)
+    .slice(0, 15)
+    .map((url, index) => ({ url, sort: index + 1 }));
+
 const fromTemplate = (raw: BackendRecord): LibraryTemplate => {
   const category = (raw.category || {}) as BackendRecord;
   return {
@@ -94,6 +139,7 @@ const fromTemplate = (raw: BackendRecord): LibraryTemplate => {
     title: toStr(raw.title),
     subtitle: toStr(raw.subtitle),
     cover: toStr(raw.cover ?? raw.cover_url),
+    images: parseImages(raw),
     description: toStr(raw.description),
     content: toStr(raw.content),
     steps: Array.isArray(raw.steps) ? raw.steps.map(String) : [],
@@ -256,6 +302,7 @@ export const createLibraryTemplate = async (data: TemplateInput): Promise<Librar
     title: data.title,
     subtitle: data.subtitle || null,
     cover_url: data.cover || null,
+    content_images: toContentImages(data.images ?? []),
     description: data.description || null,
     content: data.content || null,
     steps: data.steps,
@@ -278,6 +325,7 @@ export const updateLibraryTemplate = async (
     title: data.title,
     subtitle: data.subtitle || null,
     cover_url: data.cover || null,
+    content_images: toContentImages(data.images ?? []),
     description: data.description || null,
     content: data.content || null,
     steps: data.steps,

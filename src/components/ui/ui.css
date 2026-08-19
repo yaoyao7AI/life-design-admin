@@ -590,3 +590,123 @@
   padding: 0;
   font-size: inherit;
 }
+
+/* ---------- MultiImageUpload ---------- */
+.ui-multi-upload__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ui-multi-upload__item {
+  position: relative;
+  width: 88px;
+  cursor: grab;
+}
+.ui-multi-upload__item--dragging {
+  opacity: 0.45;
+}
+.ui-multi-upload__item--over .ui-multi-upload__thumb {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.ui-multi-upload__thumb {
+  width: 88px;
+  height: 88px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-muted);
+  cursor: zoom-in;
+}
+.ui-multi-upload__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+.ui-multi-upload__label {
+  display: block;
+  margin-top: 4px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+.ui-multi-upload__remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-danger);
+  color: #fff;
+  cursor: pointer;
+}
+.ui-multi-upload__add {
+  width: 88px;
+  height: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-muted);
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+}
+.ui-multi-upload__add:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.ui-multi-upload__hint {
+  margin-top: 8px;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+}
+.ui-multi-upload__error {
+  margin-top: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+}
+.ui-multi-upload__lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 24, 39, 0.72);
+  padding: 32px;
+}
+.ui-multi-upload__lightbox img {
+  max-width: min(920px, 100%);
+  max-height: 86vh;
+  border-radius: var(--radius);
+  object-fit: contain;
+  background: #000;
+}
+.ui-multi-upload__lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text);
+  cursor: pointer;
+}

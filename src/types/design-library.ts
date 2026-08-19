@@ -59,6 +59,7 @@ export interface LibraryTemplate {
   title: string;
   subtitle: string;
   cover: string;
+  images: string[];
   description: string;
   content: string;
   steps: string[];
@@ -108,6 +109,7 @@ export interface TemplateInput {
   title: string;
   subtitle?: string;
   cover?: string;
+  images?: string[];
   description?: string;
   content?: string;
   steps: string[];

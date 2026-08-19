@@ -16,3 +16,4 @@ export type { SegmentedOption } from './Segmented';
 export { default as FormField } from './FormField';
 export { default as TagInput } from './TagInput';
 export { default as ImageUpload } from './ImageUpload';
+export { default as MultiImageUpload } from './MultiImageUpload';

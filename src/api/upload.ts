@@ -41,10 +41,22 @@ export const uploadImage = async (file: File): Promise<UploadAsset> => {
 
 export const uploadImages = async (files: File[]): Promise<UploadAsset[]> => {
   const data = await postMultipart<
-    UploadAsset[] | { list?: UploadAsset[]; data?: UploadAsset[] }
+    | UploadAsset[]
+    | {
+        list?: UploadAsset[];
+        items?: UploadAsset[];
+        data?: UploadAsset[] | { items?: UploadAsset[]; list?: UploadAsset[] };
+      }
   >(`${API_BASE_URL}/images`, buildFormData(files));
   if (Array.isArray(data)) return data;
-  return data.list ?? data.data ?? [];
+  if (Array.isArray(data.list)) return data.list;
+  if (Array.isArray(data.items)) return data.items;
+  const nested = data.data;
+  if (Array.isArray(nested)) return nested;
+  if (nested && typeof nested === 'object') {
+    return nested.list ?? nested.items ?? [];
+  }
+  return [];
 };
 
 export const getUpload = async (id: string): Promise<UploadAsset> => {

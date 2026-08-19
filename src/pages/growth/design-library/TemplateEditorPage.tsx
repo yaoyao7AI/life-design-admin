@@ -9,6 +9,7 @@ import {
   FormField,
   Icon,
   ImageUpload,
+  MultiImageUpload,
   Input,
   Segmented,
   Select,
@@ -39,6 +40,7 @@ interface FormState {
   subtitle: string;
   description: string;
   cover: string;
+  images: string[];
   content: string;
   steps: string[];
   categoryId: string;
@@ -55,6 +57,7 @@ const emptyForm = (): FormState => ({
   subtitle: '',
   description: '',
   cover: '',
+  images: [],
   content: '',
   steps: ['', '', ''],
   categoryId: '',
@@ -126,6 +129,7 @@ export default function TemplateEditorPage() {
           subtitle: detail.subtitle,
           description: detail.description,
           cover: detail.cover,
+          images: detail.images ?? [],
           content: detail.content,
           steps: detail.steps.length ? detail.steps : [''],
           categoryId: detail.categoryId || cats[0]?.id || '',
@@ -180,6 +184,7 @@ export default function TemplateEditorPage() {
       title,
       subtitle: form.subtitle.trim(),
       cover: form.cover.trim(),
+      images: form.images,
       description: form.description.trim(),
       content: form.content.trim(),
       steps: form.steps.map((step) => step.trim()).filter(Boolean),
@@ -311,7 +316,7 @@ export default function TemplateEditorPage() {
       <div className="editor-grid">
         <div className="editor-main">
           <Card>
-            <CardHeader title="内容编辑" description="标题、简介、封面、步骤与正文" />
+            <CardHeader title="内容编辑" description="标题、简介、封面、内容图片、步骤与正文" />
             <CardBody>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 <FormField label="模板标题" required>
@@ -336,8 +341,21 @@ export default function TemplateEditorPage() {
                     placeholder="例如：来自 GTD 收集清单"
                   />
                 </FormField>
-                <FormField label="封面上传" hint="用于用户端卡片封面，建议 16:9">
+                <FormField
+                  label="封面图"
+                  hint="仅 1 张，用于列表卡片、详情封面与分享。建议 16:9，PNG / JPG"
+                >
                   <ImageUpload value={form.cover} onChange={(url) => patch('cover', url)} />
+                </FormField>
+                <FormField
+                  label="内容图片上传（最多15张）"
+                  hint="最多上传 15 张图片，图片顺序将同步到用户端模板详情页。"
+                >
+                  <MultiImageUpload
+                    value={form.images}
+                    onChange={(urls) => patch('images', urls)}
+                    max={15}
+                  />
                 </FormField>
                 <FormField label="执行步骤" hint="支持动态增加，对应详情页步骤清单">
                   <div className="dl-steps">
